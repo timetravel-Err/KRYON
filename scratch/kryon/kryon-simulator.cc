@@ -21,6 +21,11 @@
 #include "../../KRYON/include/core/Version.h"
 #include "../../KRYON/include/core/Logger.h"
 #include "../../KRYON/include/core/ExperimentConfig.h"
+#include "../../KRYON/include/core/Version.h"
+#include "../../KRYON/include/core/Logger.h"
+#include "../../KRYON/include/core/ExperimentConfig.h"
+#include "../../KRYON/include/simulation/SimulationContext.h"
+#include "../../KRYON/include/region/RegionManager.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -49,6 +54,8 @@ int main(int argc, char *argv[])
 	kryon::ExperimentConfig config;
 	
     config.Parse(argc, argv);
+	
+	kryon::SimulationContext context;
 
     // Enable WiFi logging for debugging (optional)
     // LogComponentEnable("StaWifiMac", LOG_LEVEL_INFO);
@@ -56,28 +63,15 @@ int main(int argc, char *argv[])
     RngSeedManager::SetSeed(1);
     RngSeedManager::SetRun(config.run);
 
-    uint32_t totalDrones = config.numRegions * config.dronesPerRegion;
-    uint32_t totalAVs = config.numRegions * config.avsPerRegion;
+	
+	kryon::RegionManager region(config, context);
 
-    // Create UAV (drone) nodes - act as flying Access Points
-    NodeContainer drones;
-    drones.Create(totalDrones);
+	region.Initialize();
+	auto& drones = context.drones;
+	auto& avs = context.avs;
 
-    // Create Autonomous Vehicle nodes - act as mobile stations
-    NodeContainer avs;
-    avs.Create(totalAVs);
-
-    // Install Internet stack with OLSR routing (required for ad-hoc network)
-    OlsrHelper olsr;
-    Ipv4StaticRoutingHelper staticRouting;
-    Ipv4ListRoutingHelper routing;
-    routing.Add(staticRouting, 0);
-    routing.Add(olsr, 10);
-
-    InternetStackHelper internet;
-    internet.SetRoutingHelper(routing);
-    internet.Install(drones);
-    internet.Install(avs);
+	uint32_t totalDrones = context.totalDrones;
+	uint32_t totalAVs = context.totalAVs;
 
     /* ---------------- Mobility ---------------- */
 
