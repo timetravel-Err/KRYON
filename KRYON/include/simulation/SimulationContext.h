@@ -32,8 +32,17 @@ struct SimulationContext
 
 	uint32_t totalDrones = 0;
 	uint32_t totalAVs = 0;
+	
+	/* ---------- Region Geometry ---------- */
 
-    /* ---------- Devices ---------- */
+	double regionRadius = 0.0;
+
+    /* ---------- Mobility ---------- */
+
+	double droneAltitudeMin = 50.0;
+	double droneAltitudeMax = 150.0;
+    
+	/* ---------- Devices ---------- */
 
     ns3::NetDeviceContainer droneDevices;
     ns3::NetDeviceContainer avDevices;

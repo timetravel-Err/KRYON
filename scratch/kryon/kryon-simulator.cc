@@ -26,6 +26,7 @@
 #include "../../KRYON/include/core/ExperimentConfig.h"
 #include "../../KRYON/include/simulation/SimulationContext.h"
 #include "../../KRYON/include/region/RegionManager.h"
+#include "../../KRYON/include/mobility/MobilityEngine.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -81,8 +82,9 @@ int main(int argc, char *argv[])
 
     // Scale region radius with total node count to avoid unrealistic density
     // Base: 100m for ~20 nodes, grows with sqrt(nodes) to maintain ~1 node per 500m²
-    uint32_t totalNodes = totalDrones + totalAVs;
-    double regionRadius = std::max(100.0, 50.0 * std::sqrt((double)totalNodes));
+    kryon::MobilityEngine mobility(config, context);
+
+	mobility.Initialize();
 
     for (uint32_t r = 0; r < config.numRegions; ++r)
     {
@@ -101,13 +103,13 @@ int main(int argc, char *argv[])
             posAlloc->SetAttribute(
                 "X",
                 StringValue("ns3::UniformRandomVariable[Min=" +
-                            std::to_string(regionCenterX - regionRadius) + "|Max=" +
-                            std::to_string(regionCenterX + regionRadius) + "]"));
+                            std::to_string(regionCenterX - context.regionRadius) + "|Max=" +
+                            std::to_string(regionCenterX + context.regionRadius) + "]"));
             posAlloc->SetAttribute(
                 "Y",
                 StringValue("ns3::UniformRandomVariable[Min=" +
-                            std::to_string(regionCenterY - regionRadius) + "|Max=" +
-                            std::to_string(regionCenterY + regionRadius) + "]"));
+                            std::to_string(regionCenterY - context.regionRadius) + "|Max=" +
+                            std::to_string(regionCenterY + context.regionRadius) + "]"));
             posAlloc->SetAttribute(
                 "Z",
                 StringValue("ns3::UniformRandomVariable[Min=" +
@@ -142,13 +144,13 @@ int main(int argc, char *argv[])
             avPosAlloc->SetAttribute(
                 "X",
                 StringValue("ns3::UniformRandomVariable[Min=" +
-                            std::to_string(regionCenterX - regionRadius) + "|Max=" +
-                            std::to_string(regionCenterX + regionRadius) + "]"));
+                            std::to_string(regionCenterX - context.regionRadius) + "|Max=" +
+                            std::to_string(regionCenterX + context.regionRadius) + "]"));
             avPosAlloc->SetAttribute(
                 "Y",
                 StringValue("ns3::UniformRandomVariable[Min=" +
-                            std::to_string(regionCenterY - regionRadius) + "|Max=" +
-                            std::to_string(regionCenterY + regionRadius) + "]"));
+                            std::to_string(regionCenterY - context.regionRadius) + "|Max=" +
+                            std::to_string(regionCenterY + context.regionRadius) + "]"));
             avPosAlloc->SetAttribute(
                 "Z",
                 StringValue("ns3::ConstantRandomVariable[Constant=0.0]"));  // Ground level
