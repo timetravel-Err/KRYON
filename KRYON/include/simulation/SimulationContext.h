@@ -17,7 +17,7 @@
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/flow-monitor-module.h"
-
+#include "../security/SecurityContext.h"
 namespace kryon
 {
 
@@ -61,6 +61,10 @@ struct SimulationContext
 	double delay = 0.0;
 	double jitter = 0.0;
 	double pdr = 0.0;
+	
+	/* ---------- Security ---------- */
+
+	kryon::SecurityContext security;
 
 };
 

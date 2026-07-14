@@ -21,9 +21,6 @@
 #include "../../KRYON/include/core/Version.h"
 #include "../../KRYON/include/core/Logger.h"
 #include "../../KRYON/include/core/ExperimentConfig.h"
-#include "../../KRYON/include/core/Version.h"
-#include "../../KRYON/include/core/Logger.h"
-#include "../../KRYON/include/core/ExperimentConfig.h"
 #include "../../KRYON/include/simulation/SimulationContext.h"
 #include "../../KRYON/include/region/RegionManager.h"
 #include "../../KRYON/include/mobility/MobilityEngine.h"
@@ -96,9 +93,11 @@ int main(int argc, char *argv[])
     // - AV replies mAV = ⟨EIDAV, SKVα−AV, TAV⟩ = 544 bits (68 bytes) to Drone
     // - Total per exchange: 7232 bits (904 bytes)
 
-	kryon::SecurityEngine security(config, context);
-
-	security.Initialize();
+	
+    /* ---------- Security ---------- */
+  //  kryon::SecurityEngine security(config, context);
+	
+	
    /* ---------------- Metrics ---------------- */
 
 	kryon::MetricsEngine metrics(config, context);
