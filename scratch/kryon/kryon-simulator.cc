@@ -29,6 +29,7 @@
 #include "../../KRYON/include/mobility/MobilityEngine.h"
 #include "../../KRYON/include/network/CommunicationEngine.h"
 #include "../../KRYON/include/protocol/ApplicationEngine.h"
+#include "../../KRYON/include/metrics/MetricsEngine.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -94,12 +95,16 @@ int main(int argc, char *argv[])
     // - AV replies mAV = ⟨EIDAV, SKVα−AV, TAV⟩ = 544 bits (68 bytes) to Drone
     // - Total per exchange: 7232 bits (904 bytes)
 
-   
+   /* ---------------- Metrics ---------------- */
+
+	kryon::MetricsEngine metrics(config, context);
+
+	metrics.Initialize();
+
     /* ---------------- Flow Monitor ---------------- */
 
-    FlowMonitorHelper flowHelper;
-    Ptr<FlowMonitor> monitor = flowHelper.InstallAll();
-
+    auto monitor = context.monitor;
+	
     Simulator::Stop(Seconds(config.simTime));
     Simulator::Run();
 
