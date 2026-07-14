@@ -27,6 +27,7 @@
 #include "../../KRYON/include/simulation/SimulationContext.h"
 #include "../../KRYON/include/region/RegionManager.h"
 #include "../../KRYON/include/mobility/MobilityEngine.h"
+#include "../../KRYON/include/network/CommunicationEngine.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -64,7 +65,6 @@ int main(int argc, char *argv[])
     RngSeedManager::SetSeed(1);
     RngSeedManager::SetRun(config.run);
 
-	
 	kryon::RegionManager region(config, context);
 
 	region.Initialize();
@@ -76,62 +76,24 @@ int main(int argc, char *argv[])
 
     /* ---------------- Mobility ---------------- */
 
-   kryon::MobilityEngine mobility(config, context);
+	kryon::MobilityEngine mobility(config, context);
 
 	mobility.Initialize();
-    /* ---------------- Network (WiFi Ad-Hoc) ---------------- */
+	
+	/* ---------------- Network (WiFi Ad-Hoc) ---------------- */
+	
+	kryon::CommunicationEngine communication(config, context);
 
-    // WiFi configuration for UAV-AV air-to-ground communication
-    // Using Ad-Hoc mode for realistic peer-to-peer mobile communication
-    WifiHelper wifi;
-    wifi.SetStandard(WIFI_STANDARD_80211n);
-    // MinstrelHt: adaptive rate control — automatically selects best MCS
-    // based on channel conditions (essential for mobile UAV-AV links)
-    // RtsCtsThreshold=100: enables RTS/CTS for frames ≥100 bytes
-    // (mitigates hidden-terminal problem in dense UAV-AV networks)
-    wifi.SetRemoteStationManager("ns3::MinstrelHtWifiManager",
-                                 "RtsCtsThreshold", UintegerValue(100));
-
-    // Ad-Hoc MAC for all nodes (realistic for UAV-AV mesh network)
-    WifiMacHelper wifiMac;
-    wifiMac.SetType("ns3::AdhocWifiMac");
-
-    // Realistic air-to-ground propagation model
-    // Friis Free Space model: suitable for UAV LOS to ground (matches Table IV)
-    YansWifiChannelHelper wifiChannel;
-    wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
+	communication.Initialize();
     
-    // Friis propagation loss model (line-of-sight, good for UAV-to-ground)
-    // UAVs have clear LOS to ground vehicles in most cases
-    wifiChannel.AddPropagationLoss("ns3::FriisPropagationLossModel",
-                                   "Frequency", DoubleValue(5.0e9));  // 5 GHz
+    //auto& droneDevices = context.droneDevices;
 
-    YansWifiPhyHelper wifiPhy;
-    wifiPhy.SetPcapDataLinkType(YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
-    
-    // TX power 23 dBm (~200 mW) for UAV communication range (50-150m altitude)
-    wifiPhy.Set("TxPowerStart", DoubleValue(23.0));  // 23 dBm
-    wifiPhy.Set("TxPowerEnd", DoubleValue(23.0));
-    wifiPhy.Set("RxSensitivity", DoubleValue(-82.0)); // Good sensitivity
+	//auto& avDevices = context.avDevices;
+	
+    auto& droneInterfaces = context.droneInterfaces;
 
-    // Single shared channel for the region (ad-hoc network)
-    Ptr<YansWifiChannel> channel = wifiChannel.Create();
-    wifiPhy.SetChannel(channel);
-
-    Ipv4AddressHelper ipv4;
-    
-    // Install WiFi on all drones
-    NetDeviceContainer droneDevices = wifi.Install(wifiPhy, wifiMac, drones);
-    
-    // Install WiFi on all AVs
-    NetDeviceContainer avDevices = wifi.Install(wifiPhy, wifiMac, avs);
-
-    // Assign IP addresses (single subnet for ad-hoc network)
-    ipv4.SetBase("10.1.0.0", "255.255.0.0");  // Large subnet for all nodes
-    
-    Ipv4InterfaceContainer droneInterfaces = ipv4.Assign(droneDevices);
-    Ipv4InterfaceContainer avInterfaces = ipv4.Assign(avDevices);
-
+	auto& avInterfaces = context.avInterfaces;
+	
     /* ---------------- Applications (Bidirectional) ---------------- */
 
     // 2PQS-IoAV Authentication & Key Agreement (AKA) traffic:
