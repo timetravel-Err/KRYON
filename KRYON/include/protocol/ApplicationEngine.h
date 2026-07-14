@@ -20,13 +20,18 @@
  *
  * Future Support
  * --------------
- * • 2PQS-IoAV
+ * 
  * • SLAP-IoAV
  * • Multi-hop Protocols
  * • Secure Routing
  *
  * Version : 0.1.0
  * ----------------------------------------------------------
+ 
+	// 2PQS-IoAV Authentication & Key Agreement (AKA) traffic:
+    // - Drone sends mα = ⟨EIDα, VIDα, Tα, Cα⟩ = 6688 bits (836 bytes) to AV
+    // - AV replies mAV = ⟨EIDAV, SKVα−AV, TAV⟩ = 544 bits (68 bytes) to Drone
+    // - Total per exchange: 7232 bits (904 bytes)
  */
 
 #include "../core/ExperimentConfig.h"
