@@ -36,7 +36,7 @@
 #include "../simulation/SimulationContext.h"
 #include "../core/Logger.h"
 #include "ns3/flow-monitor-module.h"
-
+#include "ns3/core-module.h"
 namespace kryon
 {
 
@@ -58,6 +58,19 @@ public:
     Logger::Info("Metrics Engine initialized.");
 }
 
+void RunSimulation()
+{
+    ns3::Simulator::Stop(
+        ns3::Seconds(m_config.simTime));
+
+    ns3::Simulator::Run();
+}
+
+void DestroySimulation()
+{
+    ns3::Simulator::Destroy();
+}
+
 private:
 
     const ExperimentConfig& m_config;
@@ -69,12 +82,14 @@ private:
 	void InstallFlowMonitor()
 {
    
-
     m_context.monitor =
         helper.InstallAll();
 
     Logger::Info("FlowMonitor installed.");
 }
+
+
+
 };
 
 }

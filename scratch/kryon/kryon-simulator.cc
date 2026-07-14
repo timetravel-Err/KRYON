@@ -105,8 +105,7 @@ int main(int argc, char *argv[])
 
     auto monitor = context.monitor;
 	
-    Simulator::Stop(Seconds(config.simTime));
-    Simulator::Run();
+    metrics.RunSimulation();
 
     monitor->CheckForLostPackets();
 
