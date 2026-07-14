@@ -107,64 +107,13 @@ int main(int argc, char *argv[])
 	
     metrics.RunSimulation();
 
-    monitor->CheckForLostPackets();
+    metrics.Finalize();
 
-    double totalThroughput = 0.0;
-    double totalDelay = 0.0;
-    double totalJitter = 0.0;
-    uint64_t totalTx = 0;
-    uint64_t totalRx = 0;
-    uint32_t flowCount = 0;
+    metrics.ComputeMetrics();
+	
+    metrics.ExportResults();
 
-    for (auto const &flow : monitor->GetFlowStats())
-    {
-        const FlowMonitor::FlowStats &stats = flow.second;
-
-        totalTx += stats.txPackets;
-        totalRx += stats.rxPackets;
-
-        if (stats.rxPackets > 0)
-        {
-            double duration =
-                stats.timeLastRxPacket.GetSeconds() -
-                stats.timeFirstTxPacket.GetSeconds();
-
-            if (duration > 0)
-            {
-                // Throughput in Kbps
-                totalThroughput += (stats.rxBytes * 8.0) / (duration * 1e3);
-            }
-            // Delay in milliseconds (delaySum is total delay for all packets)
-            totalDelay += (stats.delaySum.GetSeconds() * 1000.0) / stats.rxPackets;
-            // Jitter in milliseconds (jitterSum is total jitter for all packets)
-            totalJitter += (stats.jitterSum.GetSeconds() * 1000.0) / stats.rxPackets;
-            flowCount++;
-        }
-    }
-
-    double avgThroughput = (flowCount > 0) ? totalThroughput / flowCount : 0.0;
-    double avgDelay = (flowCount > 0) ? totalDelay / flowCount : 0.0;
-    double avgJitter = (flowCount > 0) ? totalJitter / flowCount : 0.0;
-    double pdr = (totalTx > 0) ? double(totalRx) / totalTx : 0.0;
-
-    bool writeHeader = !std::ifstream(config.csvFile).good();
-    std::ofstream out(config.csvFile, std::ios::app);
-
-    if (writeHeader)
-    {
-        out << "Regions,Drones,AVs,Throughput,Delay,Jitter,PDR\n";
-    }
-
-    out << config.numRegions << ","
-        << config.dronesPerRegion << ","
-        << config.avsPerRegion << ","
-        << avgThroughput << ","
-        << avgDelay << ","
-        << avgJitter << ","
-        << pdr << "\n";
-
-    out.close();
-
-    Simulator::Destroy();
+    metrics.DestroySimulation();
+	
     return 0;
 }

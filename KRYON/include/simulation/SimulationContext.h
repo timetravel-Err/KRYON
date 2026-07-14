@@ -55,6 +55,12 @@ struct SimulationContext
     /* ---------- Monitoring ---------- */
 
     ns3::Ptr<ns3::FlowMonitor> monitor;
+	/* ---------- Performance Metrics ---------- */
+
+	double throughput = 0.0;
+	double delay = 0.0;
+	double jitter = 0.0;
+	double pdr = 0.0;
 
 };
 
