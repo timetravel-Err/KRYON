@@ -95,8 +95,9 @@ int main(int argc, char *argv[])
 
 	
     /* ---------- Security ---------- */
-  //  kryon::SecurityEngine security(config, context);
+    kryon::SecurityEngine security(config, context);
 	
+	security.Initialize();
 	
    /* ---------------- Metrics ---------------- */
 

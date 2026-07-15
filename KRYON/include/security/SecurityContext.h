@@ -16,7 +16,10 @@
  * blockchain, DID, VC, ZKP, etc.
  * ----------------------------------------------------------
  */
-
+#include "SecurityTypes.h"
+#include "SecurityEvent.h"
+#include "SecuritySession.h"
+#include "SecurityStatistics.h"
 #include <vector>
 #include <string>
 
@@ -37,9 +40,21 @@ struct SecurityContext
 
     bool blockchainEnabled = false;
 
-    /* ---------- Future Data ---------- */
+   /* ---------- Active Sessions ---------- */
 
-    std::vector<std::string> sessionKeys;
+	std::vector<SecuritySession> sessions;
+
+	/* ---------- Security Events ---------- */
+
+	std::vector<SecurityEvent> events;
+
+	/* ---------- Statistics ---------- */
+
+	SecurityStatistics statistics;
+
+	/* ---------- Future Session Keys ---------- */
+
+	std::vector<std::string> sessionKeys;
 
 };
 
