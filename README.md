@@ -1,25 +1,34 @@
 # KRYON
+
 ### A Modular ns-3 Research Framework for Secure UAV-Assisted Internet of Autonomous Vehicles (IoAV)
 
 <p align="center">
-  <b>KRYON</b> is a modular research framework built on <b>ns-3.41</b> for developing, evaluating, and benchmarking secure communication protocols for UAV-assisted Internet of Autonomous Vehicles (IoAV).
+<b>KRYON</b> is a modular research framework built on <b>ns-3.41</b> for designing, implementing, evaluating, and benchmarking secure communication protocols for UAV-assisted Internet of Autonomous Vehicles (IoAV).
 </p>
 
 ---
 
-## Overview
+# Overview
 
-KRYON was developed to simplify research on secure vehicular communication by providing a clean, modular, and extensible simulation framework instead of monolithic ns-3 simulation scripts.
+KRYON is an extensible research framework that transforms traditional monolithic ns-3 simulation scripts into a modular software architecture suitable for long-term research and protocol development.
 
-The framework separates different simulation responsibilities into independent components, allowing researchers to easily develop and evaluate authentication protocols, trust management systems, blockchain-enabled security, decentralized identities (DID), verifiable credentials (VC), zero-knowledge proofs (ZKP), and other future IoAV technologies.
+Instead of embedding all functionality inside a single simulation program, KRYON separates the simulation into reusable engines responsible for topology generation, mobility, networking, applications, metrics, and security.
 
-Current implementation provides a stable modular architecture together with automated experiment execution and performance metric collection.
+The current implementation provides:
+
+- Modular simulation architecture
+- Automated experiment execution
+- Performance metric collection
+- Reusable Security Framework
+- Clean separation between simulation components
+- A scalable foundation for future authentication, blockchain, trust management, DID/VC, and post-quantum security research.
 
 ---
 
 # Features
 
-- Modular simulation architecture
+- Modular engine-based architecture
+- Shared `SimulationContext` across framework modules
 - Region-based topology generation
 - UAV and Autonomous Vehicle (AV) deployment
 - 3D UAV mobility models
@@ -27,20 +36,23 @@ Current implementation provides a stable modular architecture together with auto
 - IPv4 networking
 - Bidirectional application traffic
 - Automated batch experiment execution
-- Performance metric collection
+- FlowMonitor-based performance evaluation
 - CSV result export
-- Extensible security framework
+- Modular Security Framework
+- Security session management
+- Security event logging
+- Security statistics collection
 - Reproducible research workflow
 
 ---
 
 # Project Structure
 
-```
+```text
 KRYON/
-├── configs/                 # Configuration files
-├── docs/                    # Documentation
-├── examples/                # Example simulations
+├── configs/
+├── docs/
+├── examples/
 ├── include/
 │   ├── core/
 │   ├── metrics/
@@ -49,6 +61,12 @@ KRYON/
 │   ├── protocol/
 │   ├── region/
 │   ├── security/
+│   │   ├── SecurityContext.h
+│   │   ├── SecurityEngine.h
+│   │   ├── SecurityEvent.h
+│   │   ├── SecuritySession.h
+│   │   ├── SecurityStatistics.h
+│   │   └── SecurityTypes.h
 │   ├── simulation/
 │   └── utils/
 ├── results/
@@ -63,32 +81,28 @@ KRYON/
 
 # Framework Architecture
 
-```
-                 +----------------------+
-                 | ExperimentConfig     |
-                 +----------+-----------+
-                            |
-                            |
-                 +----------v-----------+
-                 | SimulationContext    |
-                 +----------+-----------+
-                            |
-     -----------------------------------------------------
-     |        |          |          |         |           |
-     |        |          |          |         |           |
-+----v---+ +--v----+ +---v----+ +---v----+ +--v----+ +----v----+
-|Region  | |Mobility| |Network | |Protocol| |Metrics| |Security |
-|Manager | |Engine  | |Engine  | |Engine  | |Engine | |Engine   |
-+--------+ +--------+ +--------+ +--------+ +--------+ +--------+
-                            |
-                            |
-                     ns-3 Simulation
-                            |
-                            |
-                      Performance Results
-                            |
-                            |
-                      CSV / Future Database
+```text
+                   +----------------------+
+                   |  ExperimentConfig    |
+                   +----------+-----------+
+                              |
+                              |
+                   +----------v-----------+
+                   |  SimulationContext   |
+                   +----------+-----------+
+                              |
+   -------------------------------------------------------------------
+   |          |            |            |            |                |
+   |          |            |            |            |                |
++--v---+ +----v----+ +-----v-----+ +----v----+ +-----v----+ +---------v---------+
+|Region| |Mobility | |Communication| |Application| |Metrics | | Security Engine  |
+|Manager| | Engine | |   Engine    | |   Engine   | | Engine | |                 |
++-------+ +---------+ +-------------+ +------------+ +---------+ +---------+------+
+                                                                    |
+                                      ---------------------------------------------
+                                      |              |               |
+                                      |              |               |
+                               Security Sessions  Security Events  Security Statistics
 ```
 
 ---
@@ -97,24 +111,25 @@ KRYON/
 
 | Component | Status |
 |-----------|--------|
-| Core | ✅ Complete |
+| Core Framework | ✅ Complete |
 | Region Manager | ✅ Complete |
 | Mobility Engine | ✅ Complete |
 | Communication Engine | ✅ Complete |
 | Application Engine | ✅ Complete |
 | Metrics Engine | ✅ Complete |
-| Security Engine Framework | ✅ Framework Ready |
-| Authentication Protocol | 🚧 Planned |
-| Trust Engine | 🚧 Planned |
-| Blockchain Engine | 🚧 Planned |
+| Security Framework | ✅ Complete |
+| Cryptographic Framework | 🚧 Planned |
+| Authentication Framework | 🚧 Planned |
+| Trust Management | 🚧 Planned |
+| Blockchain Framework | 🚧 Planned |
 | DID / VC | 🚧 Planned |
-| Zero Knowledge Proofs | 🚧 Planned |
+| Zero-Knowledge Proofs | 🚧 Planned |
 
 ---
 
 # Requirements
 
-- Ubuntu 22.04 or newer
+- Ubuntu 22.04 or later
 - ns-3.41
 - GCC 11+
 - CMake
@@ -144,7 +159,7 @@ Build
 ./ns3 run scratch/kryon/kryon-simulator
 ```
 
-Example with custom parameters
+Example
 
 ```bash
 ./ns3 run "scratch/kryon/kryon-simulator --numRegions=1 --dronesPerRegion=20 --avsPerRegion=20 --run=1"
@@ -158,24 +173,39 @@ Example with custom parameters
 python3 KRYON/scripts/run_experiments.py
 ```
 
-The experiment runner automatically executes all configured parameter combinations and stores the output in
+Simulation results are automatically stored in
 
-```
+```text
 KRYON/results/results.csv
 ```
 
 ---
 
-# Output Metrics
+# Performance Metrics
 
-The framework currently exports
+The framework currently exports:
 
 - Throughput
 - End-to-End Delay
 - Jitter
 - Packet Delivery Ratio (PDR)
 
-Results are automatically appended to the CSV file after every simulation.
+Additional security and protocol metrics will be introduced in future phases.
+
+---
+
+# Development Roadmap
+
+| Phase | Status |
+|--------|--------|
+| Phase A – Core Framework | ✅ Complete |
+| Phase B – Security Framework | ✅ Complete |
+| Phase C – Cryptographic Framework | 🚧 Next |
+| Phase D – Authentication Framework | 🚧 Planned |
+| Phase E – 2PQS-IoAV Protocol | 🚧 Planned |
+| Phase F – Blockchain Integration | 🚧 Planned |
+| Phase G – Trust Management | 🚧 Planned |
+| Phase H – Visualization & Analysis | 🚧 Planned |
 
 ---
 
@@ -183,47 +213,63 @@ Results are automatically appended to the CSV file after every simulation.
 
 | Version | Description |
 |----------|-------------|
-| v0.1.0 | Stable modular framework |
-| v0.1.1 | Experiment automation and batch execution |
+| **v0.1.0** | Initial modular framework |
+| **v0.1.1** | Automated experiment runner and batch execution |
+| **v0.2.0** | Modular Security Framework (SecurityContext, SecurityEngine, SecuritySession, SecurityEvent, SecurityStatistics) |
 
 ---
 
-# Research Roadmap
+# Research Vision
 
-Upcoming research modules include
+KRYON is being developed as a reusable research platform for secure intelligent transportation systems rather than a single-purpose simulator.
+
+Future research directions include:
 
 - Secure Authentication Protocols
+- Post-Quantum Cryptography
 - Trust Management
 - Blockchain Integration
 - Decentralized Identity (DID)
-- Verifiable Credentials
-- Zero-Knowledge Proofs
+- Verifiable Credentials (VC)
+- Zero-Knowledge Proofs (ZKP)
 - Physical Unclonable Functions (PUF)
-- Multi-chain Architecture
-- Performance Optimization
+- Multi-chain Security Architectures
+- Performance Benchmarking
 
 ---
 
 # Citation
 
-If you use KRYON in your research, please cite the corresponding publication (citation information will be added after publication).
+If you use KRYON in academic research, please cite the corresponding publication.
+
+Citation details will be added after publication.
 
 ---
 
 # License
 
-This project is released for academic and research purposes.
+This project is intended for academic, educational, and research use.
 
 ---
 
-## Author
+# Author
 
-**Dr. Gopal Singh Rawat**
+**Dr. GSRawat**
 
+**Research Interests**
 
-Research Interests
-
-- Blockchain
+- Blockchain Technologies
 - Network Security
 - Vehicular Networks (VANET / IoAV)
 - UAV-assisted Intelligent Transportation Systems
+
+# Acknowledgements
+
+This project was developed with the assistance of modern AI tools to support software engineering, documentation, debugging, and framework design.
+
+The author gratefully acknowledges:
+
+- **OpenAI ChatGPT** — for technical guidance, architectural discussions, documentation support, code review, debugging assistance, and development planning.
+- **Anthropic Claude** — for design discussions, implementation suggestions, documentation refinement, and software engineering assistance.
+
+These AI assistants served as development aids throughout the project. All architectural decisions, implementation choices, validation, testing, and final integration remain the responsibility of the author.
