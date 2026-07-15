@@ -1,215 +1,229 @@
-# The Network Simulator, Version 3
+# KRYON
+### A Modular ns-3 Research Framework for Secure UAV-Assisted Internet of Autonomous Vehicles (IoAV)
 
-[![codecov](https://codecov.io/gh/nsnam/ns-3-dev-git/branch/master/graph/badge.svg)](https://codecov.io/gh/nsnam/ns-3-dev-git/branch/master/)
-[![Gitlab CI](https://gitlab.com/nsnam/ns-3-dev/badges/master/pipeline.svg)](https://gitlab.com/nsnam/ns-3-dev/-/pipelines)
-[![Github CI](https://github.com/nsnam/ns-3-dev-git/actions/workflows/per_commit.yml/badge.svg)](https://github.com/nsnam/ns-3-dev-git/actions)
+<p align="center">
+  <b>KRYON</b> is a modular research framework built on <b>ns-3.41</b> for developing, evaluating, and benchmarking secure communication protocols for UAV-assisted Internet of Autonomous Vehicles (IoAV).
+</p>
 
-[![Latest Release](https://gitlab.com/nsnam/ns-3-dev/-/badges/release.svg)](https://gitlab.com/nsnam/ns-3-dev/-/releases)
+---
 
-## Table of Contents
+## Overview
 
-* [Overview](#overview-an-open-source-project)
-* [Building ns-3](#building-ns-3)
-* [Testing ns-3](#testing-ns-3)
-* [Running ns-3](#running-ns-3)
-* [ns-3 Documentation](#ns-3-documentation)
-* [Working with the Development Version of ns-3](#working-with-the-development-version-of-ns-3)
-* [Contributing to ns-3](#contributing-to-ns-3)
-* [Reporting Issues](#reporting-issues)
-* [ns-3 App Store](#ns-3-app-store)
+KRYON was developed to simplify research on secure vehicular communication by providing a clean, modular, and extensible simulation framework instead of monolithic ns-3 simulation scripts.
 
-> **NOTE**: Much more substantial information about ns-3 can be found at
-<https://www.nsnam.org>
+The framework separates different simulation responsibilities into independent components, allowing researchers to easily develop and evaluate authentication protocols, trust management systems, blockchain-enabled security, decentralized identities (DID), verifiable credentials (VC), zero-knowledge proofs (ZKP), and other future IoAV technologies.
 
-## Overview: An Open Source Project
+Current implementation provides a stable modular architecture together with automated experiment execution and performance metric collection.
 
-ns-3 is a free open source project aiming to build a discrete-event
-network simulator targeted for simulation research and education.
-This is a collaborative project; we hope that
-the missing pieces of the models we have not yet implemented
-will be contributed by the community in an open collaboration
-process. If you would like to contribute to ns-3, please check
-the [Contributing to ns-3](#contributing-to-ns-3) section below.
+---
 
-This README excerpts some details from a more extensive
-tutorial that is maintained at:
-<https://www.nsnam.org/documentation/latest/>
+# Features
 
-## Building ns-3
+- Modular simulation architecture
+- Region-based topology generation
+- UAV and Autonomous Vehicle (AV) deployment
+- 3D UAV mobility models
+- IEEE 802.11n Ad-hoc wireless communication
+- IPv4 networking
+- Bidirectional application traffic
+- Automated batch experiment execution
+- Performance metric collection
+- CSV result export
+- Extensible security framework
+- Reproducible research workflow
 
-The code for the framework and the default models provided
-by ns-3 is built as a set of libraries. User simulations
-are expected to be written as simple programs that make
-use of these ns-3 libraries.
+---
 
-To build the set of default libraries and the example
-programs included in this package, you need to use the
-`ns3` tool. This tool provides a Waf-like API to the
-underlying CMake build manager.
-Detailed information on how to use `ns3` is included in the
-[quick start guide](doc/installation/source/quick-start.rst).
+# Project Structure
 
-Before building ns-3, you must configure it.
-This step allows the configuration of the build options,
-such as whether to enable the examples, tests and more.
-
-To configure ns-3 with examples and tests enabled,
-run the following command on the ns-3 main directory:
-
-```shell
-./ns3 configure --enable-examples --enable-tests
+```
+KRYON/
+├── configs/                 # Configuration files
+├── docs/                    # Documentation
+├── examples/                # Example simulations
+├── include/
+│   ├── core/
+│   ├── metrics/
+│   ├── mobility/
+│   ├── network/
+│   ├── protocol/
+│   ├── region/
+│   ├── security/
+│   ├── simulation/
+│   └── utils/
+├── results/
+│   ├── figures/
+│   └── logs/
+├── scripts/
+│   └── run_experiments.py
+└── tests/
 ```
 
-Then, build ns-3 by running the following command:
+---
 
-```shell
+# Framework Architecture
+
+```
+                 +----------------------+
+                 | ExperimentConfig     |
+                 +----------+-----------+
+                            |
+                            |
+                 +----------v-----------+
+                 | SimulationContext    |
+                 +----------+-----------+
+                            |
+     -----------------------------------------------------
+     |        |          |          |         |           |
+     |        |          |          |         |           |
++----v---+ +--v----+ +---v----+ +---v----+ +--v----+ +----v----+
+|Region  | |Mobility| |Network | |Protocol| |Metrics| |Security |
+|Manager | |Engine  | |Engine  | |Engine  | |Engine | |Engine   |
++--------+ +--------+ +--------+ +--------+ +--------+ +--------+
+                            |
+                            |
+                     ns-3 Simulation
+                            |
+                            |
+                      Performance Results
+                            |
+                            |
+                      CSV / Future Database
+```
+
+---
+
+# Current Components
+
+| Component | Status |
+|-----------|--------|
+| Core | ✅ Complete |
+| Region Manager | ✅ Complete |
+| Mobility Engine | ✅ Complete |
+| Communication Engine | ✅ Complete |
+| Application Engine | ✅ Complete |
+| Metrics Engine | ✅ Complete |
+| Security Engine Framework | ✅ Framework Ready |
+| Authentication Protocol | 🚧 Planned |
+| Trust Engine | 🚧 Planned |
+| Blockchain Engine | 🚧 Planned |
+| DID / VC | 🚧 Planned |
+| Zero Knowledge Proofs | 🚧 Planned |
+
+---
+
+# Requirements
+
+- Ubuntu 22.04 or newer
+- ns-3.41
+- GCC 11+
+- CMake
+- Python 3.10+
+
+---
+
+# Build
+
+Configure ns-3
+
+```bash
+./ns3 configure
+```
+
+Build
+
+```bash
 ./ns3 build
 ```
 
-By default, the build artifacts will be stored in the `build/` directory.
+---
 
-### Supported Platforms
+# Running a Single Simulation
 
-The current codebase is expected to build and run on the
-set of platforms listed in the [release notes](RELEASE_NOTES.md)
-file.
-
-Other platforms may or may not work: we welcome patches to
-improve the portability of the code to these other platforms.
-
-## Testing ns-3
-
-ns-3 contains test suites to validate the models and detect regressions.
-To run the test suite, run the following command on the ns-3 main directory:
-
-```shell
-./test.py
+```bash
+./ns3 run scratch/kryon/kryon-simulator
 ```
 
-More information about ns-3 tests is available in the
-[test framework](doc/manual/source/test-framework.rst) section of the manual.
+Example with custom parameters
 
-## Running ns-3
-
-On recent Linux systems, once you have built ns-3 (with examples
-enabled), it should be easy to run the sample programs with the
-following command, such as:
-
-```shell
-./ns3 run simple-global-routing
+```bash
+./ns3 run "scratch/kryon/kryon-simulator --numRegions=1 --dronesPerRegion=20 --avsPerRegion=20 --run=1"
 ```
 
-That program should generate a `simple-global-routing.tr` text
-trace file and a set of `simple-global-routing-xx-xx.pcap` binary
-PCAP trace files, which can be read by `tcpdump -n -tt -r filename.pcap`.
-The program source can be found in the `examples/routing` directory.
+---
 
-## Running ns-3 from Python
+# Running Batch Experiments
 
-If you do not plan to modify ns-3 upstream modules, you can get
-a pre-built version of the ns-3 python bindings.
-
-```shell
-pip install --user ns3
+```bash
+python3 KRYON/scripts/run_experiments.py
 ```
 
-If you do not have `pip`, check their documents
-on [how to install it](https://pip.pypa.io/en/stable/installation/).
+The experiment runner automatically executes all configured parameter combinations and stores the output in
 
-After installing the `ns3` package, you can then create your simulation python script.
-Below is a trivial demo script to get you started.
-
-```python
-from ns import ns
-
-ns.LogComponentEnable("Simulator", ns.LOG_LEVEL_ALL)
-
-ns.Simulator.Stop(ns.Seconds(10))
-ns.Simulator.Run()
-ns.Simulator.Destroy()
+```
+KRYON/results/results.csv
 ```
 
-The simulation will take a while to start, while the bindings are loaded.
-The script above will print the logging messages for the called commands.
+---
 
-Use `help(ns)` to check the prototypes for all functions defined in the
-ns3 namespace. To get more useful results, query specific classes of
-interest and their functions e.g., `help(ns.Simulator)`.
+# Output Metrics
 
-Smart pointers `Ptr<>` can be differentiated from objects by checking if
-`__deref__` is listed in `dir(variable)`. To dereference the pointer,
-use `variable.__deref__()`.
+The framework currently exports
 
-Most ns-3 simulations are written in C++ and the documentation is
-oriented towards C++ users. The ns-3 tutorial programs (`first.cc`,
-`second.cc`, etc.) have Python equivalents, if you are looking for
-some initial guidance on how to use the Python API. The Python
-API may not be as full-featured as the C++ API, and an API guide
-for what C++ APIs are supported or not from Python do not currently exist.
-The project is looking for additional Python maintainers to improve
-the support for future Python users.
+- Throughput
+- End-to-End Delay
+- Jitter
+- Packet Delivery Ratio (PDR)
 
-## ns-3 Documentation
+Results are automatically appended to the CSV file after every simulation.
 
-Once you have verified that your build of ns-3 works by running
-the `simple-global-routing` example as outlined in the [running ns-3](#running-ns-3)
-section, it is quite likely that you will want to get started on reading
-some ns-3 documentation.
+---
 
-All of that documentation should always be available from
-the ns-3 website: <https://www.nsnam.org/documentation/>.
+# Version History
 
-This documentation includes:
+| Version | Description |
+|----------|-------------|
+| v0.1.0 | Stable modular framework |
+| v0.1.1 | Experiment automation and batch execution |
 
-* a tutorial
-* a reference manual
-* models in the ns-3 model library
-* a wiki for user-contributed tips: <https://www.nsnam.org/wiki/>
-* API documentation generated using doxygen: this is
-  a reference manual, most likely not very well suited
-  as introductory text:
-  <https://www.nsnam.org/doxygen/index.html>
+---
 
-## Working with the Development Version of ns-3
+# Research Roadmap
 
-If you want to download and use the development version of ns-3, you
-need to use the tool `git`. A quick and dirty cheat sheet is included
-in the manual, but reading through the Git
-tutorials found in the Internet is usually a good idea if you are not
-familiar with it.
+Upcoming research modules include
 
-If you have successfully installed Git, you can get
-a copy of the development version with the following command:
+- Secure Authentication Protocols
+- Trust Management
+- Blockchain Integration
+- Decentralized Identity (DID)
+- Verifiable Credentials
+- Zero-Knowledge Proofs
+- Physical Unclonable Functions (PUF)
+- Multi-chain Architecture
+- Performance Optimization
 
-```shell
-git clone https://gitlab.com/nsnam/ns-3-dev.git
-```
+---
 
-However, we recommend to follow the GitLab guidelines for starters,
-that includes creating a GitLab account, forking the ns-3-dev project
-under the new account's name, and then cloning the forked repository.
-You can find more information in the [manual](https://www.nsnam.org/docs/manual/html/working-with-git.html).
+# Citation
 
-## Contributing to ns-3
+If you use KRYON in your research, please cite the corresponding publication (citation information will be added after publication).
 
-The process of contributing to the ns-3 project varies with
-the people involved, the amount of time they can invest
-and the type of model they want to work on, but the current
-process that the project tries to follow is described in the
-[contributing code](https://www.nsnam.org/developers/contributing-code/)
-website and in the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+---
 
-## Reporting Issues
+# License
 
-If you would like to report an issue, you can open a new issue in the
-[GitLab issue tracker](https://gitlab.com/nsnam/ns-3-dev/-/issues).
-Before creating a new issue, please check if the problem that you are facing
-was already reported and contribute to the discussion, if necessary.
+This project is released for academic and research purposes.
 
-## ns-3 App Store
+---
 
-The official [ns-3 App Store](https://apps.nsnam.org/) is a centralized directory
-listing third-party modules for ns-3 available on the Internet.
+## Author
 
-More information on how to submit an ns-3 module to the ns-3 App Store is available
-in the [ns-3 App Store documentation](https://www.nsnam.org/docs/contributing/html/external.html).
+**Dr. Gopal Singh Rawat**
+
+
+Research Interests
+
+- Blockchain
+- Network Security
+- Vehicular Networks (VANET / IoAV)
+- UAV-assisted Intelligent Transportation Systems
