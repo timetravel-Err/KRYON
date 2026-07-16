@@ -18,6 +18,16 @@
 #include <string>
 #include <vector>
 
+/*
+
+
+./ns3 run "scratch/2pqs-ioav-auth-v3 --run=1 --attackMode=0 --blockchainMode=0"
+./ns3 run "scratch/2pqs-ioav-auth-v3 --run=2 --attackMode=1 --attackProbability=0.2 --blockchainMode=0"
+./ns3 run "scratch/2pqs-ioav-auth-v3 --run=3 --attackMode=2 --attackProbability=0.2 --blockchainMode=0"
+./ns3 run "scratch/2pqs-ioav-auth-v3 --run=4 --attackMode=0 --blockchainMode=1 --blockchainCommitDelayMs=50"
+
+
+*/
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("TwoPqsIoavAuthV3");
