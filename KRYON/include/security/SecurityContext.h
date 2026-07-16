@@ -22,7 +22,7 @@
 #include "SecurityStatistics.h"
 #include <vector>
 #include <string>
-#include "AuthenticationContext.h"
+#include "../authentication/AuthenticationContext.h"
 
 namespace kryon
 {
