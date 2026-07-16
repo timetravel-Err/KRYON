@@ -116,8 +116,12 @@ int main(int argc, char *argv[])
     metrics.ComputeMetrics();
 	
     metrics.ExportResults();
+	
+	security.Finalize();
 
     metrics.DestroySimulation();
+	
+	
 	
     return 0;
 }
