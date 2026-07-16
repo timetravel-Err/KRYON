@@ -32,6 +32,7 @@
 #include "SecurityEvent.h"
 #include "SecurityStatistics.h"
 #include "../crypto/CryptoEngine.h"
+#include "AuthenticationEngine.h"
 namespace kryon
 {
 
@@ -43,7 +44,8 @@ public:
                    SimulationContext& context)
         : m_config(config),
           m_context(context),
-		  m_crypto(config, context)
+		  m_crypto(config, context),
+		  m_authentication(config, context)
     {
     }
 
@@ -52,7 +54,8 @@ public:
 
     m_crypto.Initialize();
 
-    m_context.security.authenticationEnabled = true;
+    //m_context.security.authenticationEnabled = true;
+	m_authentication.Initialize();
 
     Logger::Info("Security Engine initialized.");
 }
@@ -97,7 +100,8 @@ void RecordEvent(const SecurityEvent& event)
 
 void Finalize()
 {
-    m_crypto.Finalize();
+    m_authentication.Finalize();
+	m_crypto.Finalize();
 
     Logger::Info("Security Engine finalized.");
 }
@@ -108,6 +112,7 @@ private:
     SimulationContext& m_context;
 	
 	CryptoEngine m_crypto;
+	AuthenticationEngine m_authentication;
 };
 
 }

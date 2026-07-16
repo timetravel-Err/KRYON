@@ -55,12 +55,25 @@ KRYON/
 ├── examples/
 ├── include/
 │   ├── core/
+│   ├── crypto/
+│   │   ├── CryptoEngine.h
+│   │   ├── CryptoTypes.h
+│   │   ├── ECCEngine.h
+│   │   ├── HashEngine.h
+│   │   ├── KeyGenerator.h
+│   │   └── RandomEngine.h
 │   ├── metrics/
 │   ├── mobility/
 │   ├── network/
 │   ├── protocol/
 │   ├── region/
 │   ├── security/
+│   │   ├── AuthenticationContext.h
+│   │   ├── AuthenticationEngine.h
+│   │   ├── AuthenticationRequest.h
+│   │   ├── AuthenticationResponse.h
+│   │   ├── AuthenticationResult.h
+│   │   ├── AuthenticationTypes.h
 │   │   ├── SecurityContext.h
 │   │   ├── SecurityEngine.h
 │   │   ├── SecurityEvent.h
@@ -99,10 +112,15 @@ KRYON/
 |Manager| | Engine | |   Engine    | |   Engine   | | Engine | |                 |
 +-------+ +---------+ +-------------+ +------------+ +---------+ +---------+------+
                                                                     |
-                                      ---------------------------------------------
-                                      |              |               |
-                                      |              |               |
-                               Security Sessions  Security Events  Security Statistics
+                                                                  
+                              |  Security Engine     |
+                              +----------+-----------+
+                                         |
+                  ---------------------------------------------
+                  |                                           |
+          +-------v--------+                      +------------v-----------+
+          |  Crypto Engine |                      | Authentication Engine  |
+          +----------------+                      +------------------------+
 ```
 
 ---
@@ -118,8 +136,8 @@ KRYON/
 | Application Engine | ✅ Complete |
 | Metrics Engine | ✅ Complete |
 | Security Framework | ✅ Complete |
-| Cryptographic Framework | 🚧 Planned |
-| Authentication Framework | 🚧 Planned |
+| Cryptographic Framework | ✅ Complete |
+| Authentication Framework |✅ Complete |
 | Trust Management | 🚧 Planned |
 | Blockchain Framework | 🚧 Planned |
 | DID / VC | 🚧 Planned |
@@ -194,30 +212,18 @@ Additional security and protocol metrics will be introduced in future phases.
 
 ---
 
-# Development Roadmap
-
-| Phase | Status |
-|--------|--------|
-| Phase A – Core Framework | ✅ Complete |
-| Phase B – Security Framework | ✅ Complete |
-| Phase C – Cryptographic Framework | 🚧 Next |
-| Phase D – Authentication Framework | 🚧 Planned |
-| Phase E – 2PQS-IoAV Protocol | 🚧 Planned |
-| Phase F – Blockchain Integration | 🚧 Planned |
-| Phase G – Trust Management | 🚧 Planned |
-| Phase H – Visualization & Analysis | 🚧 Planned |
 
 ---
-
-# Version History
 
 | Version | Description |
 |----------|-------------|
 | **v0.1.0** | Initial modular framework |
 | **v0.1.1** | Automated experiment runner and batch execution |
-| **v0.2.0** | Modular Security Framework (SecurityContext, SecurityEngine, SecuritySession, SecurityEvent, SecurityStatistics) |
+| **v0.2.0** | Security Framework |
+| **v0.3.0** | Cryptography Framework |
+| **v0.4.0** | Authentication Framework |
 
----
+----
 
 # Research Vision
 

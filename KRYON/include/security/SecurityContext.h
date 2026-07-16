@@ -22,6 +22,7 @@
 #include "SecurityStatistics.h"
 #include <vector>
 #include <string>
+#include "AuthenticationContext.h"
 
 namespace kryon
 {
@@ -31,6 +32,8 @@ struct SecurityContext
     /* ---------- Authentication ---------- */
 
     bool authenticationEnabled = false;
+	
+	AuthenticationContext authentication;
 
     /* ---------- Trust ---------- */
 
