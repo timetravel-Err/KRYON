@@ -30,6 +30,7 @@
 #include "AuthenticationResponse.h"
 #include "AuthenticationResult.h"
 #include "AuthenticationTypes.h"
+#include "AuthenticationManager.h"
 
 namespace kryon
 {
@@ -38,12 +39,13 @@ class AuthenticationEngine
 {
 public:
 
-    AuthenticationEngine(const ExperimentConfig& config,
-                         SimulationContext& context)
-        : m_config(config),
-          m_context(context)
-    {
-    }
+  AuthenticationEngine(const ExperimentConfig& config,
+                     SimulationContext& context)
+    : m_config(config),
+      m_context(context),
+      m_manager(config, context)
+{
+}
 
     void Initialize()
     {
@@ -57,11 +59,24 @@ public:
         Logger::Info("Authentication request created.");
     }
 
-    void ProcessAuthentication()
+   void ProcessAuthentication()
+	{
+    if (m_context.security.authentication.requests.empty())
     {
-        Logger::Info("Authentication processing started.");
+        return;
     }
 
+    AuthenticationRequest request =
+        m_context.security.authentication.requests.back();
+
+    AuthenticationResult result =
+        m_manager.Authenticate(request);
+
+    m_context.security.authentication.results.push_back(result);
+
+    Logger::Info("Authentication processing completed.");
+	}
+	
     void CompleteAuthentication(const AuthenticationResult& result)
     {
         m_context.security.authentication.results.push_back(result);
@@ -69,16 +84,20 @@ public:
         Logger::Info("Authentication completed.");
     }
 
-    void Finalize()
-    {
-        Logger::Info("Authentication Engine finalized.");
-    }
+	void Finalize()
+	{
+    m_manager.Finalize();
+
+    Logger::Info("Authentication Engine finalized.");
+	}
 
 private:
 
     const ExperimentConfig& m_config;
 
     SimulationContext& m_context;
+	
+	AuthenticationManager m_manager;
 };
 
 }
