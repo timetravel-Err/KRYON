@@ -1,100 +1,182 @@
 # KRYON Project Status
 
-**Last Updated:** 16 July 2026
+**Project:** KRYON – A Modular ns-3 Research Framework for Secure UAV-Assisted Internet of Autonomous Vehicles (IoAV)
 
-**Current Version:** v0.4.0 (Pending Release)
+**Current Version:** v0.3.0
 
-**Current Development Phase:** Phase E – Protocol Architecture
+**Last Updated:** July 2026
+
+---
+
+# Project Overview
+
+KRYON is a modular research framework built on ns-3.41 for designing, implementing, evaluating, and benchmarking secure communication protocols for UAV-assisted Internet of Autonomous Vehicles (IoAV).
+
+The framework follows a layered, engine-based architecture to support long-term research in authentication, trust management, blockchain, decentralized identity (DID), verifiable credentials (VC), post-quantum cryptography, and future intelligent transportation systems.
 
 ---
 
 # Overall Progress
 
 | Phase | Description | Status |
-|---------|-------------|--------|
-| Phase A | Modular Framework | ✅ Complete |
+|--------|-------------|:------:|
+| Phase A | Core Framework Architecture | ✅ Complete |
 | Phase B | Security Framework | ✅ Complete |
-| Phase C | Cryptography Framework | ✅ Complete |
-| Phase D | Authentication Framework | ✅ Complete |
-| Phase E | Protocol Architecture | 🚧 In Progress |
-| Phase F | Trust Framework | ⏳ Planned |
-| Phase G | Blockchain Framework | ⏳ Planned |
-| Phase H | DID / VC Framework | ⏳ Planned |
-| Phase I | Zero-Knowledge Framework | ⏳ Planned |
-| Phase J | PUF Framework | ⏳ Planned |
+| Phase C | Cryptographic Framework | ✅ Complete |
+| Phase D | Metrics & Experiment Framework | ✅ Complete |
+| Phase E1 | Authentication Module Refactoring | ✅ Complete |
+| Phase E2 | Authentication Plugin Architecture | 🚧 Next |
+| Phase F | 2PQS-IoAV Protocol Integration | ⏳ Planned |
+| Phase G | Trust Management Framework | ⏳ Planned |
+| Phase H | Blockchain Integration | ⏳ Planned |
+| Phase I | DID / VC Framework | ⏳ Planned |
+| Phase J | Zero Knowledge Proof Framework | ⏳ Planned |
 
 ---
 
-# Current Sprint
+# Completed Components
 
-## Objective
+## Core
 
-Design a protocol-independent authentication architecture that supports pluggable authentication mechanisms.
+- ExperimentConfig
+- Constants
+- Logger
+- Version
 
----
+## Region
 
-# Completed Since Last Release
+- RegionManager
 
-### Authentication Framework
+## Mobility
 
-- ✅ AuthenticationTypes
-- ✅ AuthenticationRequest
-- ✅ AuthenticationResponse
-- ✅ AuthenticationResult
-- ✅ AuthenticationContext
-- ✅ AuthenticationEngine
+- MobilityEngine
 
-### Security Integration
+## Communication
 
-- ✅ AuthenticationEngine integrated into SecurityEngine
-- ✅ AuthenticationContext integrated into SecurityContext
+- CommunicationEngine
 
----
+## Application
 
-# Current Tasks
+- ApplicationEngine
 
-- [ ] Design protocol abstraction
-- [ ] Create protocol interface
-- [ ] Design protocol registration mechanism
-- [ ] Prepare first protocol implementation
+## Metrics
 
----
+- MetricsEngine
 
-# Framework Status
+## Security
 
-| Module | Status |
-|---------|--------|
-| Core | ✅ |
-| Region | ✅ |
-| Mobility | ✅ |
-| Network | ✅ |
-| Protocol | ✅ |
-| Metrics | ✅ |
-| Security | ✅ |
-| Crypto | ✅ |
-| Authentication | ✅ |
-| Trust | ⏳ |
-| Blockchain | ⏳ |
+- SecurityEngine
+- SecurityContext
+- SecuritySession
+- SecurityEvent
+- SecurityStatistics
 
----
+## Cryptography
 
-# Build Status
+- CryptoEngine
+- RandomEngine
+- HashEngine
+- ECCEngine
+- KeyGenerator
 
-| Item | Status |
-|------|--------|
-| Build | ✅ Passing |
-| Simulation | ✅ Running |
-| Documentation | ✅ Updated |
-| GitHub | ⏳ Pending Push |
+## Authentication (New Module)
+
+- AuthenticationEngine
+- AuthenticationContext
+- AuthenticationRequest
+- AuthenticationResponse
+- AuthenticationResult
+- AuthenticationTypes
 
 ---
 
-# Next Milestone
+# Current Architecture
 
-**v0.5.0 – Protocol Architecture**
+```
+Core
+ │
+ ├── Region
+ ├── Mobility
+ ├── Communication
+ ├── Application
+ ├── Metrics
+ ├── Security
+ │        │
+ │        └── Authentication
+ │
+ └── Crypto
+```
 
 ---
 
-# Notes
+# Current Framework Capabilities
 
-The Authentication Framework is now fully integrated into the Security Framework. Future authentication protocols will be implemented through a protocol abstraction layer without modifying the AuthenticationEngine.
+- Modular Engine Architecture
+- Shared SimulationContext
+- Shared SecurityContext
+- Dedicated Authentication Module
+- Modular Cryptographic Framework
+- Region-based UAV Deployment
+- IEEE 802.11n Ad Hoc Networking
+- IPv4 Networking
+- Automated Experiment Runner
+- CSV Result Export
+- FlowMonitor Performance Metrics
+- Security Event Logging
+- Authentication Session Management
+
+---
+
+# Immediate Next Objectives
+
+## Phase E2
+
+Develop a protocol-independent authentication framework.
+
+Planned components:
+
+- IAuthenticationProtocol
+- AuthenticationProtocolManager
+- AuthenticationFactory
+- DummyAuthenticationProtocol
+
+This architecture will allow future authentication protocols to be plugged into the framework without modifying the framework core.
+
+---
+
+# Long-Term Research Vision
+
+Future protocol implementations include:
+
+- 2PQS-IoAV
+- TC2PA
+- PUF-based Authentication
+- DID Authentication
+- Verifiable Credentials
+- Blockchain-backed Authentication
+- Trust Management
+- Zero-Knowledge Proof Authentication
+
+---
+
+# Current Build Status
+
+Build Status:
+
+✅ Successful
+
+Simulation Status:
+
+✅ Successful
+
+GitHub Status:
+
+✅ Up-to-date
+
+Documentation Status:
+
+✅ Up-to-date
+
+Architecture Status:
+
+Stable

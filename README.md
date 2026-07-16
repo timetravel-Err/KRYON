@@ -28,20 +28,21 @@ The current implementation provides:
 # Features
 
 - Modular engine-based architecture
-- Shared `SimulationContext` across framework modules
-- Region-based topology generation
-- UAV and Autonomous Vehicle (AV) deployment
-- 3D UAV mobility models
-- IEEE 802.11n Ad-hoc wireless communication
+- Shared SimulationContext
+- Shared SecurityContext
+- Dedicated Authentication Module
+- Modular Cryptographic Framework
+- Region-based UAV deployment
+- 3D UAV mobility
+- IEEE 802.11n Ad-hoc communication
 - IPv4 networking
 - Bidirectional application traffic
 - Automated batch experiment execution
-- FlowMonitor-based performance evaluation
+- FlowMonitor-based performance metrics
 - CSV result export
-- Modular Security Framework
 - Security session management
 - Security event logging
-- Security statistics collection
+- Authentication request/result management
 - Reproducible research workflow
 
 ---
@@ -52,39 +53,27 @@ The current implementation provides:
 KRYON/
 ├── configs/
 ├── docs/
+│   ├── Architecture.md
+│   ├── CodingStandards.md
+│   ├── DeveloperGuide.md
+│   └── PROJECT_STATUS.md
 ├── examples/
 ├── include/
+│   ├── authentication/
 │   ├── core/
 │   ├── crypto/
-│   │   ├── CryptoEngine.h
-│   │   ├── CryptoTypes.h
-│   │   ├── ECCEngine.h
-│   │   ├── HashEngine.h
-│   │   ├── KeyGenerator.h
-│   │   └── RandomEngine.h
 │   ├── metrics/
 │   ├── mobility/
 │   ├── network/
 │   ├── protocol/
 │   ├── region/
 │   ├── security/
-│   │   ├── AuthenticationContext.h
-│   │   ├── AuthenticationEngine.h
-│   │   ├── AuthenticationRequest.h
-│   │   ├── AuthenticationResponse.h
-│   │   ├── AuthenticationResult.h
-│   │   ├── AuthenticationTypes.h
-│   │   ├── SecurityContext.h
-│   │   ├── SecurityEngine.h
-│   │   ├── SecurityEvent.h
-│   │   ├── SecuritySession.h
-│   │   ├── SecurityStatistics.h
-│   │   └── SecurityTypes.h
 │   ├── simulation/
 │   └── utils/
 ├── results/
 │   ├── figures/
-│   └── logs/
+│   ├── logs/
+│   └── results.csv
 ├── scripts/
 │   └── run_experiments.py
 └── tests/
@@ -137,12 +126,12 @@ KRYON/
 | Metrics Engine | ✅ Complete |
 | Security Framework | ✅ Complete |
 | Cryptographic Framework | ✅ Complete |
-| Authentication Framework |✅ Complete |
-| Trust Management | 🚧 Planned |
-| Blockchain Framework | 🚧 Planned |
-| DID / VC | 🚧 Planned |
-| Zero-Knowledge Proofs | 🚧 Planned |
-
+| Authentication Module | ✅ Complete |
+| Authentication Plugin Architecture | 🚧 Next |
+| Trust Management | ⏳ Planned |
+| Blockchain Framework | ⏳ Planned |
+| DID / VC | ⏳ Planned |
+| Zero-Knowledge Proofs | ⏳ Planned |
 ---
 
 # Requirements
@@ -221,7 +210,7 @@ Additional security and protocol metrics will be introduced in future phases.
 | **v0.1.1** | Automated experiment runner and batch execution |
 | **v0.2.0** | Security Framework |
 | **v0.3.0** | Cryptography Framework |
-| **v0.4.0** | Authentication Framework |
+| **v0.4.0** | Authentication Framework (refactored) |
 
 ----
 
