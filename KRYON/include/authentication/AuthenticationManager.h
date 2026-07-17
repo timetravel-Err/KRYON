@@ -24,8 +24,7 @@
 #include "AuthenticationRequest.h"
 #include "AuthenticationResult.h"
 
-#include "protocols/dummy/DummyAuthenticationProtocol.h"
-
+#include "protocols/rap/RAPAuthenticationProtocol.h"
 namespace kryon
 {
 
@@ -71,7 +70,7 @@ private:
 
     SimulationContext& m_context;
 
-    DummyAuthenticationProtocol m_protocol;
+    RAPAuthenticationProtocol m_protocol;
 };
 
 }

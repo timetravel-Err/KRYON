@@ -1,11 +1,11 @@
-#ifndef KRYON_DUMMY_AUTHENTICATION_PROTOCOL_H
-#define KRYON_DUMMY_AUTHENTICATION_PROTOCOL_H
+#ifndef KRYON_RAP _AUTHENTICATION_PROTOCOL_H
+#define KRYON_RAP _AUTHENTICATION_PROTOCOL_H
 
 /**
  * ----------------------------------------------------------
  * KRYON Research Framework
  * ----------------------------------------------------------
- * File : DummyAuthenticationProtocol.h
+ * File : RAPAuthenticationProtocol.h
  *
  * Description
  * -----------
@@ -26,17 +26,17 @@
 namespace kryon
 {
 
-class DummyAuthenticationProtocol : public IAuthenticationProtocol
+class RAPAuthenticationProtocol : public IAuthenticationProtocol
 {
 public:
 
-    DummyAuthenticationProtocol() = default;
+    RAPAuthenticationProtocol() = default;
 
-    ~DummyAuthenticationProtocol() override = default;
+    ~RAPAuthenticationProtocol() override = default;
 
     void Initialize() override
     {
-        Logger::Info("Dummy Authentication Protocol initialized.");
+        Logger::Info("RAP  Authentication Protocol initialized.");
     }
 
     AuthenticationResult Authenticate(
@@ -48,19 +48,19 @@ public:
 
         result.authenticated = true;
 
-        Logger::Info("Dummy authentication succeeded.");
+        Logger::Info("RAP  authentication succeeded.");
 
         return result;
     }
 
     void Finalize() override
     {
-        Logger::Info("Dummy Authentication Protocol finalized.");
+        Logger::Info("RAP  Authentication Protocol finalized.");
     }
 
     std::string GetProtocolName() const override
     {
-        return "Dummy Authentication";
+        return "RReference Authentication Protocol (RAP)";
     }
 };
 
