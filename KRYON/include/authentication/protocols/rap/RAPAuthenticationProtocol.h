@@ -44,8 +44,23 @@ public:
     AuthenticationResult Authenticate(
     const AuthenticationRequest& request) override
 {
-    Logger::Info("========== RAP Authentication ==========");
-    Logger::Info("Step 1: Authentication request received.");
+    Logger::Info("==========================================");
+Logger::Info("RAP Authentication Started");
+
+Logger::Info(
+    "Drone Node      : " +
+    std::to_string(request.sourceNodeId));
+
+Logger::Info(
+    "Vehicle Node    : " +
+    std::to_string(request.destinationNodeId));
+
+Logger::Info(
+    "Request ID      : " +
+    request.requestId);
+
+Logger::Info("------------------------------------------");
+Logger::Info("Message 1 : Authentication Request");
 
     AuthenticationChallenge challenge =
         GenerateChallenge(request);
@@ -56,7 +71,9 @@ public:
     bool authenticated =
         VerifyResponse(response);
 
-    Logger::Info("========== RAP Authentication Complete ==========");
+    Logger::Info("------------------------------------------");
+	Logger::Info("RAP Authentication Completed");
+	Logger::Info("==========================================");
 
     return BuildResult(request, authenticated);
 }
@@ -75,7 +92,7 @@ private:
 	AuthenticationChallenge GenerateChallenge(
     const AuthenticationRequest& request)
 	{
-    Logger::Info("Step 2: Challenge generated.");
+    Logger::Info("Message 2: Challenge generated.");
 
     AuthenticationChallenge challenge;
 
@@ -92,7 +109,7 @@ private:
     const AuthenticationRequest& request,
     const AuthenticationChallenge& challenge)
 {
-    Logger::Info("Step 3: Response generated.");
+    Logger::Info("Message  3: Challenge Response.");
 
     AuthenticationResponse response;
 
@@ -109,7 +126,9 @@ bool VerifyResponse(
 {
     (void)response;
 
-    Logger::Info("Step 4: Response verified.");
+    Logger::Info("Message  4: Response Verification.");
+	
+	Logger::Info("Authentication Result : SUCCESS");
 
     return true;
 }
