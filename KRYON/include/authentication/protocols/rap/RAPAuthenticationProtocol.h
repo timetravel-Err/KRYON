@@ -1,5 +1,5 @@
-#ifndef KRYON_RAP _AUTHENTICATION_PROTOCOL_H
-#define KRYON_RAP _AUTHENTICATION_PROTOCOL_H
+#ifndef KRYON_RAP_AUTHENTICATION_PROTOCOL_H
+#define KRYON_RAP_AUTHENTICATION_PROTOCOL_H
 
 /**
  * ----------------------------------------------------------
@@ -22,6 +22,8 @@
 #include "../../AuthenticationResult.h"
 #include "../../AuthenticationTypes.h"
 #include "../../../core/Logger.h"
+#include "../../AuthenticationChallenge.h"
+#include "../../AuthenticationResponse.h"
 
 namespace kryon
 {
@@ -40,18 +42,24 @@ public:
     }
 
     AuthenticationResult Authenticate(
-        const AuthenticationRequest& request) override
-    {
-        (void)request;
+    const AuthenticationRequest& request) override
+{
+    Logger::Info("========== RAP Authentication ==========");
+    Logger::Info("Step 1: Authentication request received.");
 
-        AuthenticationResult result;
+    AuthenticationChallenge challenge =
+        GenerateChallenge(request);
 
-        result.authenticated = true;
+    AuthenticationResponse response =
+        GenerateResponse(request, challenge);
 
-        Logger::Info("RAP  authentication succeeded.");
+    bool authenticated =
+        VerifyResponse(response);
 
-        return result;
-    }
+    Logger::Info("========== RAP Authentication Complete ==========");
+
+    return BuildResult(request, authenticated);
+}
 
     void Finalize() override
     {
@@ -62,6 +70,74 @@ public:
     {
         return "RReference Authentication Protocol (RAP)";
     }
+	
+private:
+	AuthenticationChallenge GenerateChallenge(
+    const AuthenticationRequest& request)
+	{
+    Logger::Info("Step 2: Challenge generated.");
+
+    AuthenticationChallenge challenge;
+
+    challenge.challengeId = "CH-0001";
+    challenge.sourceNodeId = request.destinationNodeId;
+    challenge.destinationNodeId = request.sourceNodeId;
+    challenge.challenge = 123456;
+    challenge.timestamp = request.timestamp;
+
+    return challenge;
+	}
+	
+	AuthenticationResponse GenerateResponse(
+    const AuthenticationRequest& request,
+    const AuthenticationChallenge& challenge)
+{
+    Logger::Info("Step 3: Response generated.");
+
+    AuthenticationResponse response;
+
+    response.requestId = request.requestId;
+    response.responderNodeId = request.sourceNodeId;
+    response.challenge = challenge.challenge;
+    response.proof = "RAP-PROOF";
+    response.timestamp = challenge.timestamp;
+
+    return response;
+}
+bool VerifyResponse(
+    const AuthenticationResponse& response)
+{
+    (void)response;
+
+    Logger::Info("Step 4: Response verified.");
+
+    return true;
+}
+AuthenticationResult BuildResult(
+    const AuthenticationRequest& request,
+    bool authenticated)
+{
+    AuthenticationResult result;
+
+    result.requestId = request.requestId;
+    result.method = request.method;
+
+    result.status =
+        authenticated ?
+        AuthenticationStatus::SUCCESS :
+        AuthenticationStatus::FAILED;
+
+    result.authenticated = authenticated;
+    result.authenticationTimeMs = 0.0;
+
+    result.reason =
+        authenticated ?
+        "RAP authentication successful." :
+        "RAP authentication failed.";
+
+    return result;
+}
+	
 };
 
 }

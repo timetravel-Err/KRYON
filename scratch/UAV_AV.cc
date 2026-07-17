@@ -10,6 +10,7 @@
  * - Extended metrics
  */
 // Execute ./ns3 run "scratch/UAV_AV.cc --numRegions=1 --dronesPerRegion=5 --avsPerRegion=10 --run=1 --csvFile=uav_av_results.csv"
+
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
