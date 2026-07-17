@@ -38,6 +38,8 @@ struct AuthenticationRequest
     bool requiresMutualAuthentication = false;
 
     double timestamp = 0.0;
+	
+	uint64_t nonce = 0;
 };
 
 }
