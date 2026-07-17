@@ -17,6 +17,7 @@
 #include <string>
 
 #include "ns3/core-module.h"
+#include "../authentication/AuthenticationTypes.h"
 
 namespace kryon
 {
@@ -38,6 +39,11 @@ public:
     double simTime = 60.0;
 
     std::string csvFile = "scratch/results.csv";
+	
+	/* Framework Configuration */
+
+	AuthenticationProtocolType authenticationProtocol =
+    AuthenticationProtocolType::REFERENCE;
 
     void Parse(int argc, char *argv[])
     {

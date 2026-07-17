@@ -99,6 +99,23 @@ void RecordEvent(const SecurityEvent& event)
     }
 }
 
+void ExecuteAuthentication()
+{
+    AuthenticationRequest request;
+
+    request.requestId = "REQ-0001";
+    request.sourceNodeId = 0;
+    request.destinationNodeId = 1;
+    request.method = AuthenticationMethod::NONE;
+    request.requiresMutualAuthentication = true;
+    request.timestamp = 0.0;
+
+    m_authentication.StartAuthentication(request);
+    m_authentication.ProcessAuthentication();
+
+    Logger::Info("Authentication workflow executed.");
+}
+
 void Finalize()
 {
     m_authentication.Finalize();

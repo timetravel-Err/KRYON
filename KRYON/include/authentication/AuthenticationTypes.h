@@ -39,7 +39,10 @@ enum class AuthenticationMethod
 
     CUSTOM
 };
-
+enum class AuthenticationProtocolType
+{
+    REFERENCE
+};
 enum class AuthenticationStatus
 {
     NOT_STARTED,

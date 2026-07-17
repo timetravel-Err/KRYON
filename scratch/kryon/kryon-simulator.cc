@@ -99,6 +99,8 @@ int main(int argc, char *argv[])
 	
 	security.Initialize();
 	
+	security.ExecuteAuthentication();
+	
    /* ---------------- Metrics ---------------- */
 
 	kryon::MetricsEngine metrics(config, context);
@@ -118,6 +120,8 @@ int main(int argc, char *argv[])
     metrics.ExportResults();
 	
 	security.Finalize();
+	
+	
 
     metrics.DestroySimulation();
 	

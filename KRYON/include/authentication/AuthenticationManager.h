@@ -40,13 +40,18 @@ public:
     {
     }
 
-    void Initialize()
-    {
-        m_protocol.Initialize();
+   void Initialize()
+{
+    Logger::Info("Authentication Manager starting...");
 
-        Logger::Info("Authentication Manager initialized.");
-    }
+    Logger::Info(
+        "Authentication protocol: REFERENCE");
 
+    m_protocol.Initialize();
+
+    Logger::Info(
+        "Authentication Manager initialized.");
+}
     AuthenticationResult Authenticate(
         const AuthenticationRequest& request)
     {
