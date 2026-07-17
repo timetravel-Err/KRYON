@@ -35,11 +35,11 @@ struct AuthenticationResult
     AuthenticationStatus status =
         AuthenticationStatus::NOT_STARTED;
 
-    bool success = false;
+   bool authenticated = false;
 
-    double authenticationTimeMs = 0.0;
+double authenticationTimeMs = 0.0;
 
-    std::string details;
+std::string reason;
 };
 
 }

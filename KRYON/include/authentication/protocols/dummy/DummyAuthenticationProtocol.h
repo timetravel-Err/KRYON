@@ -46,7 +46,7 @@ public:
 
         AuthenticationResult result;
 
-        result.success = true;
+        result.authenticated = true;
 
         Logger::Info("Dummy authentication succeeded.");
 

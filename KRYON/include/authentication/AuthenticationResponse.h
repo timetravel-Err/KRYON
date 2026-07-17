@@ -30,16 +30,12 @@ struct AuthenticationResponse
 
     uint32_t responderNodeId = 0;
 
-    AuthenticationStatus status =
-        AuthenticationStatus::NOT_STARTED;
+    uint64_t challenge = 0;
 
-    bool accepted = false;
-
-    std::string message;
+    std::string proof;
 
     double timestamp = 0.0;
 };
-
 }
 
 #endif
