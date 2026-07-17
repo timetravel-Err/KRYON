@@ -103,16 +103,25 @@ void ExecuteAuthentication()
 {
     AuthenticationRequest request;
 
-    request.requestId = "REQ-0001";
-    request.sourceNodeId = 0;
-    request.destinationNodeId = 1;
-    request.method = AuthenticationMethod::NONE;
-    request.requiresMutualAuthentication = true;
-    request.timestamp = 0.0;
+   request.requestId = "REQ-0001";
+
+	auto drone = m_context.drones.Get(0);
+	auto av = m_context.avs.Get(0);
+
+	request.sourceNodeId = drone->GetId();
+	request.destinationNodeId = av->GetId();
+
+	request.method = AuthenticationMethod::NONE;
+	request.requiresMutualAuthentication = true;
+	request.timestamp = ns3::Simulator::Now().GetSeconds();
 
     m_authentication.StartAuthentication(request);
     m_authentication.ProcessAuthentication();
-
+    Logger::Info(
+    "Authenticated Drone " +
+    std::to_string(request.sourceNodeId) +
+    " with Vehicle " +
+    std::to_string(request.destinationNodeId));
     Logger::Info("Authentication workflow executed.");
 }
 
