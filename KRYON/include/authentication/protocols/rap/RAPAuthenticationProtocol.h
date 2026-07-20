@@ -24,6 +24,7 @@
 #include "../../../core/Logger.h"
 #include "../../AuthenticationChallenge.h"
 #include "../../AuthenticationResponse.h"
+#include "ns3/core-module.h"
 
 namespace kryon
 {
@@ -44,6 +45,9 @@ public:
     AuthenticationResult Authenticate(
     const AuthenticationRequest& request) override
 {
+	double start =
+    ns3::Simulator::Now().GetSeconds();
+	
     Logger::Info("==========================================");
 Logger::Info("RAP Authentication Started");
 
@@ -74,8 +78,14 @@ Logger::Info("Message 1 : Authentication Request");
     Logger::Info("------------------------------------------");
 	Logger::Info("RAP Authentication Completed");
 	Logger::Info("==========================================");
+	
+	double end =
+    ns3::Simulator::Now().GetSeconds();
 
-    return BuildResult(request, authenticated);
+    return BuildResult(
+    request,
+    authenticated,
+    (end - start) * 1000.0);
 }
 
     void Finalize() override
@@ -134,27 +144,51 @@ bool VerifyResponse(
 }
 AuthenticationResult BuildResult(
     const AuthenticationRequest& request,
-    bool authenticated)
+    bool authenticated,
+    double authenticationTimeMs)
 {
-    AuthenticationResult result;
+   AuthenticationResult result;
 
-    result.requestId = request.requestId;
-    result.method = request.method;
+result.requestId = request.requestId;
 
-    result.status =
-        authenticated ?
-        AuthenticationStatus::SUCCESS :
-        AuthenticationStatus::FAILED;
+result.protocolName = "RAP";
 
-    result.authenticated = authenticated;
-    result.authenticationTimeMs = 0.0;
+result.method = request.method;
 
-    result.reason =
-        authenticated ?
-        "RAP authentication successful." :
-        "RAP authentication failed.";
+result.status =
+    authenticated ?
+    AuthenticationStatus::SUCCESS :
+    AuthenticationStatus::FAILED;
 
-    return result;
+result.authenticated = authenticated;
+
+/*
+ * RAP Message Flow
+ * 1. Authentication Request
+ * 2. Challenge
+ * 3. Challenge Response
+ * 4. Verification
+ */
+result.messagesExchanged = 4;
+
+/*
+ * Current RAP communication overhead
+ *
+ * Request  : 836 Bytes
+ * Response : 68 Bytes
+ */
+result.bytesExchanged = 904;
+
+result.authenticationTimeMs =
+    authenticationTimeMs;
+
+result.reason =
+    authenticated ?
+    "RAP authentication successful." :
+    "RAP authentication failed.";
+
+return result;
+
 }
 	
 };

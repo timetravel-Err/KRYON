@@ -99,30 +99,66 @@ void RecordEvent(const SecurityEvent& event)
     }
 }
 
-void ExecuteAuthentication()
+void ExecuteAuthentication(AuthenticationRequest request)
 {
-    AuthenticationRequest request;
+    
+	SecurityEvent startEvent;
 
-   request.requestId = "REQ-0001";
+	startEvent.type = SecurityEventType::AUTH_START;
 
-	auto drone = m_context.drones.Get(0);
-	auto av = m_context.avs.Get(0);
+	RecordEvent(startEvent);
 
-	request.sourceNodeId = drone->GetId();
-	request.destinationNodeId = av->GetId();
-
-	request.method = AuthenticationMethod::NONE;
-	request.requiresMutualAuthentication = true;
-	request.timestamp = ns3::Simulator::Now().GetSeconds();
-
-    m_authentication.StartAuthentication(request);
+	m_authentication.StartAuthentication(request);
     m_authentication.ProcessAuthentication();
+	const auto& result = m_context.security.authentication.results.back();
+	
+	SecurityEvent resultEvent;
+
+	resultEvent.type = result.authenticated ? SecurityEventType::AUTH_SUCCESS : SecurityEventType::AUTH_FAILURE;
+
+	RecordEvent(resultEvent);
     Logger::Info(
     "Authenticated Drone " +
     std::to_string(request.sourceNodeId) +
     " with Vehicle " +
     std::to_string(request.destinationNodeId));
     Logger::Info("Authentication workflow executed.");
+}
+
+void PrintSecurityStatistics()
+{
+    auto& stats = m_context.security.statistics;
+
+    double successRate = 0.0;
+
+    if (stats.authenticationAttempts > 0)
+    {
+        successRate =
+            (100.0 * stats.authenticationSuccesses) /
+            stats.authenticationAttempts;
+    }
+
+    Logger::Info("==========================================");
+    Logger::Info("KRYON Security Statistics");
+    Logger::Info("==========================================");
+
+    Logger::Info(
+        "Authentication Attempts : " +
+        std::to_string(stats.authenticationAttempts));
+
+    Logger::Info(
+        "Authentication Success  : " +
+        std::to_string(stats.authenticationSuccesses));
+
+    Logger::Info(
+        "Authentication Failure  : " +
+        std::to_string(stats.authenticationFailures));
+
+    Logger::Info(
+        "Success Rate            : " +
+        std::to_string(successRate) + " %");
+
+    Logger::Info("==========================================");
 }
 
 void Finalize()

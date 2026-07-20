@@ -1,378 +1,421 @@
 # KRYON Developer Guide
 
-**Version:** v0.3.0  
-**Last Updated:** July 2026
+## Extending the KRYON Research Framework
 
 ---
 
-# 1. Introduction
+# Introduction
 
-Welcome to the KRYON Research Framework.
+KRYON is designed as a modular research framework rather than a single simulation program.
 
-KRYON is a modular simulation framework built on **ns-3.41** for research in secure UAV-assisted Internet of Autonomous Vehicles (IoAV).
+The primary goal of the framework is to allow researchers to develop, integrate, and evaluate new communication and security protocols without modifying the underlying simulation infrastructure.
 
-Unlike traditional ns-3 simulation scripts, KRYON separates simulation responsibilities into independent modules that can be extended without affecting the rest of the framework.
-
-This guide explains how to build, run, modify, and extend KRYON.
-
-KRYON is intended to be a long-lived, modular research framework rather than a single-purpose simulation. New functionality should be added by extending existing subsystems or introducing well-defined modules, while preserving architectural consistency and reproducibility.
+Every major subsystem is encapsulated inside an independent engine with clearly defined responsibilities.
 
 ---
 
-# 2. System Requirements
+# Development Philosophy
 
-Recommended Environment
+When extending KRYON, developers should follow these principles:
 
-- Ubuntu 22.04 LTS or newer
-- GCC 11+
-- CMake
-- Python 3.10+
-- Git
-- ns-3.41
-
----
-
-# 3. Repository Structure
-
-```
-KRYON/
-├── configs/
-├── docs/
-├── examples/
-├── include/
-│   ├── core/
-│   ├── crypto/
-│   ├── metrics/
-│   ├── mobility/
-│   ├── network/
-│   ├── protocol/
-│   ├── region/
-│   ├── security/
-│   ├── simulation/
-│   └── utils/
-├── results/
-├── scripts/
-└── tests/
-```
-
-Main simulator
-
-```
-scratch/kryon/kryon-simulator.cc
-```
+- Keep modules independent.
+- Avoid modifying unrelated engines.
+- Prefer composition over duplication.
+- Reuse SimulationContext.
+- Reuse SecurityContext.
+- Follow the existing engine lifecycle.
+- Preserve protocol independence.
 
 ---
 
-# 4. Initial Setup
+# Engine Lifecycle
 
-Clone the repository
+Every engine follows the same execution model.
 
-```bash
-git clone https://github.com/timetravel-Err/KRYON.git
+```text
+Initialize()
+
+↓
+
+Execute()
+
+↓
+
+Finalize()
 ```
 
-Enter the project
+Initialization should allocate resources.
 
-```bash
-cd KRYON
-```
+Execution should perform protocol-specific work.
 
-Configure ns-3
-
-```bash
-./ns3 configure
-```
-
-Build
-
-```bash
-./ns3 build
-```
+Finalize should release resources and print summary information if required.
 
 ---
 
-# 5. Running a Simulation
+# Current Engine Structure
 
-Run the default simulation
-
-```bash
-./ns3 run scratch/kryon/kryon-simulator
-```
-
-Run with custom parameters
-
-```bash
-./ns3 run "scratch/kryon/kryon-simulator --numRegions=1 --dronesPerRegion=20 --avsPerRegion=20 --run=1"
-```
-
----
-
-# 6. Running Batch Experiments
-
-Execute
-
-```bash
-python3 KRYON/scripts/run_experiments.py
-```
-
-Results are stored in
-
-```
-KRYON/results/results.csv
-```
-
----
-
-# 7. Framework Execution Flow
-
-Every simulation follows this sequence.
-
-```
-ExperimentConfig
-        ↓
-SimulationContext
-        ↓
+```text
 RegionManager
-        ↓
+
+↓
+
 MobilityEngine
-        ↓
+
+↓
+
 CommunicationEngine
-        ↓
+
+↓
+
 ApplicationEngine
-        ↓
+
+↓
+
 SecurityEngine
-        ↓
-CryptoEngine
-        ↓
+
+↓
+
 MetricsEngine
-        ↓
-Results Export
 ```
+
+Each engine performs one clearly defined responsibility.
 
 ---
 
-# 8. Adding a New Engine
+# Shared Context Objects
 
-Every new subsystem should follow the same process.
+Two shared context objects are available throughout the framework.
 
-Example
+## SimulationContext
 
+Stores simulation-wide information including:
+
+- Nodes
+- Devices
+- Interfaces
+- Flow Monitor
+- Performance metrics
+- SecurityContext
+
+Every engine receives a reference to the same SimulationContext.
+
+---
+
+## SecurityContext
+
+Stores all security-related state.
+
+Current contents include:
+
+- AuthenticationContext
+- SecurityEvents
+- SecuritySessions
+- SecurityStatistics
+
+Future modules should extend SecurityContext instead of introducing additional global state.
+
+---
+
+# Adding a New Engine
+
+A new engine should follow the existing framework style.
+
+Example:
+
+```cpp
+class TrustEngine
+{
+public:
+
+    void Initialize();
+
+    void Execute();
+
+    void Finalize();
+
+};
 ```
+
+The engine should receive:
+
+```cpp
+const ExperimentConfig&
+SimulationContext&
+```
+
+through its constructor.
+
+---
+
+# Adding a New Authentication Protocol
+
+Authentication protocols are intentionally separated from the framework.
+
+Current hierarchy:
+
+```text
 AuthenticationEngine
+
+↓
+
+AuthenticationManager
+
+↓
+
+RAPAuthenticationProtocol
 ```
 
-Steps
+To add a new protocol:
 
-1. Create the engine.
-2. Add initialization.
-3. Integrate into the parent engine.
-4. Build.
-5. Run.
-6. Commit.
+1. Create a new protocol directory.
 
-Avoid modifying multiple framework components simultaneously.
+Example:
+
+```text
+authentication/
+    protocols/
+        slap/
+        pqc/
+        did/
+        blockchain/
+```
+
+2. Implement the protocol.
+
+Example:
+
+```cpp
+class SLAPAuthenticationProtocol :
+    public IAuthenticationProtocol
+{
+};
+```
+
+3. Update AuthenticationManager to select the desired protocol.
+
+No changes should be required elsewhere in the framework.
 
 ---
 
-# 9. Development Workflow
+# Authentication Workflow
 
-Every feature should follow this workflow.
+The authentication pipeline is:
 
+```text
+SecurityEngine
+
+↓
+
+AuthenticationEngine
+
+↓
+
+AuthenticationManager
+
+↓
+
+AuthenticationProtocol
+
+↓
+
+AuthenticationResult
+
+↓
+
+SecurityStatistics
 ```
-Design
-    ↓
-Implement
-    ↓
-Build
-    ↓
-Run
-    ↓
-Test
-    ↓
-Commit
-    ↓
-Push
+
+Future authentication protocols should integrate into this workflow without modifying the surrounding engines.
+
+---
+
+# Using CryptoEngine
+
+Cryptographic operations should always be performed through CryptoEngine.
+
+Current modules include:
+
+- RandomEngine
+- HashEngine
+- KeyGenerator
+- ECCEngine
+
+Future additions may include:
+
+- AES
+- SHA-3
+- PQC
+- PUF
+- Digital Certificates
+
+Higher-level modules should never directly invoke individual cryptographic engines.
+
+---
+
+# Recording Security Events
+
+Security-related operations should be recorded through SecurityEngine.
+
+Example:
+
+```cpp
+SecurityEvent event;
+
+event.type = SecurityEventType::AUTH_SUCCESS;
+
+RecordEvent(event);
+```
+
+Avoid manually modifying SecurityStatistics.
+
+SecurityEngine automatically updates statistics based on recorded events.
+
+---
+
+# Exporting Metrics
+
+Performance metrics should be stored inside SimulationContext.
+
+MetricsEngine is responsible for exporting results.
+
+New metrics should be added to:
+
+- SimulationContext
+- MetricsEngine
+- CSV exporter
+
+Avoid writing output files from other engines.
+
+---
+
+# Logging
+
+Use the framework logger.
+
+Example:
+
+```cpp
+Logger::Info("Security Engine initialized.");
+```
+
+Avoid using:
+
+```cpp
+std::cout
+```
+
+inside framework components.
+
+---
+
+# Coding Style
+
+Follow the existing project conventions.
+
+## Naming
+
+Classes
+
+```text
+PascalCase
+```
+
+Functions
+
+```text
+PascalCase
+```
+
+Variables
+
+```text
+camelCase
+```
+
+Private members
+
+```text
+m_variable
+```
+
+Constants
+
+```text
+UPPER_CASE
 ```
 
 ---
 
-# 10. Build Policy
+# File Organization
 
-After every significant change execute
+New modules should be placed inside their corresponding directory.
 
-```bash
-./ns3 build
+Example:
+
+```text
+include/
+
+authentication/
+
+crypto/
+
+metrics/
+
+mobility/
+
+network/
+
+protocol/
+
+security/
+
+simulation/
 ```
 
-After successful compilation execute
-
-```bash
-./ns3 run scratch/kryon/kryon-simulator
-```
-
-Never continue development if the framework does not build successfully.
+Avoid placing unrelated code inside existing modules.
 
 ---
 
-# 11. Git Workflow
+# Testing
 
-Before starting new work
+Every new protocol should satisfy the following requirements.
 
-```bash
-git pull
-```
-
-Check project status
-
-```bash
-git status
-```
-
-Commit
-
-```bash
-git add .
-git commit -m "Meaningful commit message"
-```
-
-Push
-
-```bash
-git push origin develop
-```
-
-Tag stable releases
-
-```bash
-git tag -a vX.Y.Z -m "Release description"
-git push origin vX.Y.Z
-```
+- Build successfully.
+- Execute without runtime errors.
+- Produce reproducible output.
+- Integrate with SecurityEngine.
+- Update SecurityStatistics.
+- Export metrics correctly.
 
 ---
 
-# 12. Directory Responsibilities
+# Planned Extensions
 
-| Directory | Purpose |
-|------------|---------|
-| core | Framework configuration |
-| crypto | Cryptographic primitives |
-| region | Region generation |
-| mobility | Mobility models |
-| network | Communication infrastructure |
-| protocol | Application-layer protocols |
-| security | Security subsystem |
-| metrics | Performance evaluation |
-| simulation | Runtime simulation context |
-| docs | Technical documentation |
-| results | Experimental outputs |
-| scripts | Automation scripts |
+Future framework development includes:
 
----
+- Authentication plugin architecture
+- Trust management
+- Blockchain integration
+- Decentralized Identity (DID)
+- Verifiable Credentials (VC)
+- Zero-Knowledge Proofs
+- Physical Unclonable Functions (PUF)
+- Post-Quantum Cryptography
+- Multi-chain interoperability
 
-# 13. Adding New Research Modules
-
-Future research modules should be implemented as independent engines.
-
-Examples
-
-- AuthenticationEngine
-- TrustEngine
-- BlockchainEngine
-- DIDEngine
-- VCEngine
-- ZKPEngine
-- PUFEngine
-
-Each module should integrate naturally into the existing framework without modifying unrelated components.
+The current architecture has been designed so these modules can be added with minimal modification to existing code.
 
 ---
 
-# 14. Release Workflow
-
-Every stable milestone should follow this process.
-
-1. Build successfully.
-2. Run successfully.
-3. Update documentation.
-4. Commit changes.
-5. Push to GitHub.
-6. Create a version tag.
-7. Push the version tag.
-
-This ensures that every tagged version represents a reproducible and stable state of the framework.
-
----
-
-# 15. Troubleshooting
-
-## Build Fails
-
-Run
-
-```bash
-./ns3 configure
-./ns3 build
-```
-
----
-
-## Check Git Status
-
-```bash
-git status
-```
-
----
-
-## View Recent Commits
-
-```bash
-git log --oneline --decorate
-```
-
----
-
-## List Available Tags
-
-```bash
-git tag
-```
-
----
-
-# 16. Contributing
+# Contributing
 
 When contributing to KRYON:
 
-- Follow the coding standards.
-- Maintain modularity.
+- Preserve modularity.
+- Minimize coupling.
+- Keep engines independent.
+- Reuse shared context objects.
 - Document architectural changes.
-- Keep commits focused and meaningful.
-- Preserve backward compatibility whenever possible.
+- Update PROJECT_STATUS.md after major milestones.
 
----
-
-# 17. Support
-
-For questions, bug reports, or research collaboration, please use the project's GitHub Issues page or contact the project maintainer.
-
----
-
-# Maintainer
-
-**Dr. GSRawat**
-
-Assistant Professor
-
-Research Interests
-
-- Blockchain
-- Network Security
-- VANET
-- IoAV
-- UAV-assisted Intelligent Transportation Systems
-- Applied Cryptography
-
----
-
-**Document Version:** v0.3.0
+Following these guidelines ensures that KRYON remains maintainable, extensible, and suitable as a long-term research framework for secure UAV-assisted IoAV systems.

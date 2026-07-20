@@ -74,7 +74,36 @@ public:
 
     m_context.security.authentication.results.push_back(result);
 
-    Logger::Info("Authentication processing completed.");
+    Logger::Info("========== Authentication Summary ==========");
+
+Logger::Info(
+    "Protocol            : " +
+    result.protocolName);
+
+Logger::Info(
+    "Status              : " +
+    std::string(result.authenticated ? "SUCCESS" : "FAILED"));
+
+Logger::Info(
+    "Messages Exchanged  : " +
+    std::to_string(result.messagesExchanged));
+
+Logger::Info(
+    "Bytes Exchanged     : " +
+    std::to_string(result.bytesExchanged));
+
+Logger::Info(
+    "Authentication Time : " +
+    std::to_string(result.authenticationTimeMs) +
+    " ms");
+
+Logger::Info(
+    "Reason              : " +
+    result.reason);
+
+Logger::Info("============================================");
+	
+	
 	}
 	
     void CompleteAuthentication(const AuthenticationResult& result)

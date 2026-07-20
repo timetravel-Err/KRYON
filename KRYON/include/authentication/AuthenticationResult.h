@@ -29,17 +29,23 @@ struct AuthenticationResult
 {
     std::string requestId;
 
+    std::string protocolName;
+
     AuthenticationMethod method =
         AuthenticationMethod::NONE;
 
     AuthenticationStatus status =
         AuthenticationStatus::NOT_STARTED;
 
-   bool authenticated = false;
+    bool authenticated = false;
 
-double authenticationTimeMs = 0.0;
+    uint32_t messagesExchanged = 0;
 
-std::string reason;
+    uint32_t bytesExchanged = 0;
+
+    double authenticationTimeMs = 0.0;
+
+    std::string reason;
 };
 
 }

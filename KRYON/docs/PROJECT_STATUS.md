@@ -2,68 +2,205 @@
 
 **Project:** KRYON – A Modular ns-3 Research Framework for Secure UAV-Assisted Internet of Autonomous Vehicles (IoAV)
 
-**Current Version:** v0.3.0
+**Current Development Version:** v0.5.1 (Development)
 
-**Last Updated:** July 2026
-
----
-
-# Project Overview
-
-KRYON is a modular research framework built on ns-3.41 for designing, implementing, evaluating, and benchmarking secure communication protocols for UAV-assisted Internet of Autonomous Vehicles (IoAV).
-
-The framework follows a layered, engine-based architecture to support long-term research in authentication, trust management, blockchain, decentralized identity (DID), verifiable credentials (VC), post-quantum cryptography, and future intelligent transportation systems.
+**Framework Status:** Active Development
 
 ---
 
 # Overall Progress
 
-| Phase | Description | Status |
-|--------|-------------|:------:|
-| Phase A | Core Framework Architecture | ✅ Complete |
-| Phase B | Security Framework | ✅ Complete |
-| Phase C | Cryptographic Framework | ✅ Complete |
-| Phase D | Metrics & Experiment Framework | ✅ Complete |
-| Phase E1 | Authentication Module Refactoring | ✅ Complete |
-| Phase E2 | Authentication Plugin Architecture | 🚧 Next |
-| Phase F | 2PQS-IoAV Protocol Integration | ⏳ Planned |
-| Phase G | Trust Management Framework | ⏳ Planned |
-| Phase H | Blockchain Integration | ⏳ Planned |
-| Phase I | DID / VC Framework | ⏳ Planned |
-| Phase J | Zero Knowledge Proof Framework | ⏳ Planned |
+KRYON has evolved from a collection of ns-3 simulation scripts into a modular research framework with independent software components for mobility, communication, security, authentication, cryptography, and performance evaluation.
+
+The current implementation provides a reusable architecture that allows future authentication protocols, cryptographic schemes, blockchain systems, trust management models, and post-quantum security mechanisms to be integrated with minimal changes to the core simulation framework.
 
 ---
 
-# Completed Components
+# Current Module Status
 
-## Core
+| Module | Status |
+|---------|--------|
+| Core Framework | ✅ Complete |
+| Experiment Configuration | ✅ Complete |
+| Simulation Context | ✅ Complete |
+| Region Manager | ✅ Complete |
+| Mobility Engine | ✅ Complete |
+| Communication Engine | ✅ Complete |
+| Application Engine | ✅ Complete |
+| Metrics Engine | ✅ Complete |
+| Security Engine | ✅ Complete |
+| Cryptographic Framework | ✅ Complete |
+| Authentication Engine | ✅ Complete |
+| RAP Reference Authentication Protocol | ✅ Complete |
 
-- ExperimentConfig
-- Constants
-- Logger
-- Version
+---
 
-## Region
+# Current Framework Architecture
 
-- RegionManager
+The framework currently contains the following major engines:
 
-## Mobility
+```
+ExperimentConfig
+        │
+        ▼
+SimulationContext
+        │
+ ┌──────────────────────────────────────────────┐
+ │                                              │
+ ▼                                              ▼
+Region Manager                            Security Engine
+ │                                              │
+ ▼                                              ▼
+Mobility Engine                         Authentication Engine
+ │                                              │
+ ▼                                              ▼
+Communication Engine                    Authentication Manager
+ │                                              │
+ ▼                                              ▼
+Application Engine                RAP Authentication Protocol
+ │
+ ▼
+Metrics Engine
+```
 
-- MobilityEngine
+---
 
-## Communication
+# Implemented Components
 
-- CommunicationEngine
+## Core Framework
 
-## Application
+- Modular project organization
+- Engine-based architecture
+- Shared SimulationContext
+- Shared SecurityContext
+- Configurable experiment execution
+- Version management
 
-- ApplicationEngine
+---
 
-## Metrics
+## Region Manager
 
-- MetricsEngine
+Implemented:
 
-## Security
+- Region size calculation
+- UAV creation
+- Vehicle creation
+- Internet stack installation
+- OLSR routing installation
+
+Status:
+
+**Stable**
+
+---
+
+## Mobility Engine
+
+Implemented:
+
+- UAV mobility
+- Vehicle mobility
+- 3D deployment
+- Configurable region scaling
+
+Status:
+
+**Stable**
+
+---
+
+## Communication Engine
+
+Implemented:
+
+- IEEE 802.11n Ad-hoc WiFi
+- IPv4 addressing
+- WiFi device installation
+- Network initialization
+
+Status:
+
+**Stable**
+
+---
+
+## Application Engine
+
+Implemented:
+
+- UDP servers
+- UDP clients
+- Drone → Vehicle communication
+- Vehicle → Drone communication
+
+Current authentication traffic:
+
+| Message | Size |
+|----------|------|
+| Drone → Vehicle | 836 Bytes |
+| Vehicle → Drone | 68 Bytes |
+| Total | 904 Bytes |
+
+Status:
+
+**Stable**
+
+---
+
+# Authentication Framework
+
+The authentication subsystem is now fully modular.
+
+Implemented components:
+
+- AuthenticationEngine
+- AuthenticationManager
+- AuthenticationContext
+- AuthenticationRequest
+- AuthenticationResponse
+- AuthenticationResult
+- AuthenticationChallenge
+- AuthenticationTypes
+
+Current protocol:
+
+- RAP (Reference Authentication Protocol)
+
+Purpose:
+
+The RAP protocol serves as a protocol-independent reference implementation that validates the complete authentication workflow without relying on cryptographic primitives.
+
+---
+
+# RAP Authentication Workflow
+
+The current reference protocol performs the following sequence:
+
+1. Authentication Request
+2. Challenge Generation
+3. Challenge Response
+4. Response Verification
+5. Authentication Result
+6. Security Event Recording
+7. Security Statistics Update
+8. Authentication Summary Logging
+
+Current output includes:
+
+- Request ID
+- Drone ID
+- Vehicle ID
+- Authentication status
+- Number of exchanged messages
+- Communication overhead
+- Authentication latency
+- Success reason
+
+---
+
+# Security Framework
+
+Implemented:
 
 - SecurityEngine
 - SecurityContext
@@ -71,112 +208,190 @@ The framework follows a layered, engine-based architecture to support long-term 
 - SecurityEvent
 - SecurityStatistics
 
-## Cryptography
+Supported security events:
+
+- Authentication Started
+- Authentication Success
+- Authentication Failure
+- Key Generated
+- Trust Updated
+
+Current statistics:
+
+- Authentication Attempts
+- Authentication Successes
+- Authentication Failures
+- Authentication Success Rate
+
+Status:
+
+**Stable**
+
+---
+
+# Cryptographic Framework
+
+Implemented components:
 
 - CryptoEngine
 - RandomEngine
 - HashEngine
-- ECCEngine
 - KeyGenerator
+- ECCEngine
 
-## Authentication (New Module)
+Current role:
 
-- AuthenticationEngine
-- AuthenticationContext
-- AuthenticationRequest
-- AuthenticationResponse
-- AuthenticationResult
-- AuthenticationTypes
+The CryptoEngine provides a unified interface for all cryptographic operations. Although the current RAP protocol does not invoke cryptographic primitives, the framework is prepared for future integration of ECC, PUF, PQC, DID/VC, and blockchain-based authentication schemes.
+
+Status:
+
+**Stable**
 
 ---
 
-# Current Architecture
+# Metrics Framework
+
+Current performance metrics:
+
+- Throughput
+- End-to-End Delay
+- Jitter
+- Packet Delivery Ratio (PDR)
+
+Current security metrics:
+
+- Authentication Attempts
+- Authentication Successes
+- Authentication Failures
+- Success Rate
+
+Results are exported automatically to:
 
 ```
-Core
- │
- ├── Region
- ├── Mobility
- ├── Communication
- ├── Application
- ├── Metrics
- ├── Security
- │        │
- │        └── Authentication
- │
- └── Crypto
+scratch/results.csv
 ```
 
----
+Status:
 
-# Current Framework Capabilities
-
-- Modular Engine Architecture
-- Shared SimulationContext
-- Shared SecurityContext
-- Dedicated Authentication Module
-- Modular Cryptographic Framework
-- Region-based UAV Deployment
-- IEEE 802.11n Ad Hoc Networking
-- IPv4 Networking
-- Automated Experiment Runner
-- CSV Result Export
-- FlowMonitor Performance Metrics
-- Security Event Logging
-- Authentication Session Management
+**Stable**
 
 ---
 
-# Immediate Next Objectives
+# Current Simulator Output
 
-## Phase E2
+The simulator currently reports:
 
-Develop a protocol-independent authentication framework.
-
-Planned components:
-
-- IAuthenticationProtocol
-- AuthenticationProtocolManager
-- AuthenticationFactory
-- DummyAuthenticationProtocol
-
-This architecture will allow future authentication protocols to be plugged into the framework without modifying the framework core.
-
----
-
-# Long-Term Research Vision
-
-Future protocol implementations include:
-
-- 2PQS-IoAV
-- TC2PA
-- PUF-based Authentication
-- DID Authentication
-- Verifiable Credentials
-- Blockchain-backed Authentication
-- Trust Management
-- Zero-Knowledge Proof Authentication
+- Framework initialization
+- Region creation
+- Mobility installation
+- Communication initialization
+- Application installation
+- Authentication execution
+- Authentication summary
+- Performance metric collection
+- Security statistics
+- Framework shutdown
 
 ---
 
-# Current Build Status
+# Current Repository Status
 
-Build Status:
+The framework now provides:
 
-✅ Successful
+- Modular architecture
+- Reusable authentication framework
+- Independent security layer
+- Modular cryptographic layer
+- Automated metrics collection
+- CSV export
+- Clean separation of simulation components
 
-Simulation Status:
+The codebase is suitable for implementing multiple authentication protocols without modifying the higher-level simulation architecture.
 
-✅ Successful
+---
 
-GitHub Status:
+# Next Development Phase
 
-✅ Up-to-date
+## Authentication
 
-Documentation Status:
+- Authentication plugin architecture
+- Multiple authentication protocol selection
+- Protocol factory
 
-✅ Up-to-date
+---
 
-Architecture Status:
+## Security
 
-Stable
+- Trust computation
+- Reputation management
+- Session lifecycle management
+
+---
+
+## Cryptography
+
+- ECC implementation
+- Hash integration
+- PUF integration
+- Symmetric encryption
+- Post-Quantum Cryptography
+
+---
+
+## Blockchain
+
+- Blockchain engine
+- Distributed ledger
+- Smart contract interface
+- Consensus abstraction
+
+---
+
+## Identity
+
+- Decentralized Identity (DID)
+- Verifiable Credentials (VC)
+- Selective Disclosure
+- Zero-Knowledge Proofs
+
+---
+
+# Development Roadmap
+
+| Version | Status |
+|----------|--------|
+| v0.1.0 | Modular Framework |
+| v0.1.1 | Batch Experiment Support |
+| v0.2.0 | Security Framework |
+| v0.3.0 | Cryptographic Framework |
+| v0.4.0 | Authentication Framework |
+| v0.5.0 | Reference Authentication Protocol |
+| v0.5.1 | Security Statistics, Authentication Workflow, Framework Stabilization |
+| v0.6.0 | Authentication Plugin Architecture |
+| v0.7.0 | Trust Management |
+| v0.8.0 | Blockchain Integration |
+| v0.9.0 | DID / VC |
+| v1.0.0 | Secure Modular IoAV Research Platform |
+
+---
+
+# Current Assessment
+
+| Area | Status |
+|------|--------|
+| Architecture | ✅ Stable |
+| Simulation | ✅ Stable |
+| Networking | ✅ Stable |
+| Authentication | ✅ Stable |
+| Security | ✅ Stable |
+| Cryptography Framework | ✅ Stable |
+| Metrics | ✅ Stable |
+| Extensibility | ✅ High |
+
+---
+
+# Summary
+
+KRYON has successfully transitioned from a traditional ns-3 simulation into a reusable modular research framework.
+
+The current implementation establishes a stable software architecture for future research on secure UAV-assisted IoAV systems, enabling rapid integration and evaluation of authentication protocols, cryptographic schemes, blockchain technologies, decentralized identity frameworks, and post-quantum security mechanisms while preserving a clean separation between simulation infrastructure and security logic.

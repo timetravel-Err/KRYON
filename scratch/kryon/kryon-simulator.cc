@@ -28,6 +28,7 @@
 #include "../../KRYON/include/protocol/ApplicationEngine.h"
 #include "../../KRYON/include/metrics/MetricsEngine.h"
 #include "../../KRYON/include/security/SecurityEngine.h"
+#include "../../KRYON/include/core/IdGenerator.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -99,7 +100,40 @@ int main(int argc, char *argv[])
 	
 	security.Initialize();
 	
-	security.ExecuteAuthentication();
+	kryon::AuthenticationRequest request;
+ 
+	request.requestId = kryon::IdGenerator::NextRequestId();
+
+	uint32_t droneIndex = 0;
+uint32_t vehicleIndex = 0;
+
+if (context.totalDrones > 0)
+{
+    droneIndex =
+        context.totalDrones - 1;
+}
+
+if (context.totalAVs > 0)
+{
+    vehicleIndex =
+        context.totalAVs - 1;
+}
+
+request.sourceNodeId =
+    context.drones.Get(droneIndex)->GetId();
+
+request.destinationNodeId =
+    context.avs.Get(vehicleIndex)->GetId();
+
+	request.method =
+    kryon::AuthenticationMethod::NONE;
+
+	request.requiresMutualAuthentication = true;
+
+	request.timestamp =
+    ns3::Simulator::Now().GetSeconds();
+	
+	security.ExecuteAuthentication(request);
 	
    /* ---------------- Metrics ---------------- */
 
@@ -118,6 +152,8 @@ int main(int argc, char *argv[])
     metrics.ComputeMetrics();
 	
     metrics.ExportResults();
+	
+	security.PrintSecurityStatistics();
 	
 	security.Finalize();
 	
