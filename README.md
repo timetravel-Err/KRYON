@@ -179,8 +179,7 @@ Currently implemented
 
 Framework ready for
 
-- 2PQS-IoAV
-- SLAP-IoAV
+- Privacy Preserving Authentication
 - Blockchain Authentication
 - DID Authentication
 - Zero Knowledge Authentication
