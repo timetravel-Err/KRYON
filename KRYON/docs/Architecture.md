@@ -1,388 +1,328 @@
-# KRYON Framework Architecture
+# KRYON Architecture
 
-## A Modular ns-3 Research Framework for Secure UAV-Assisted Internet of Autonomous Vehicles (IoAV)
+**Framework:** KRYON  
+**Version:** v1.1.0  
+**Simulator:** ns-3.41
 
 ---
 
 # Overview
 
-KRYON adopts a modular software architecture that separates simulation infrastructure from protocol logic. Instead of implementing an entire research protocol inside a single ns-3 simulation script, the framework decomposes the simulator into reusable engines, each responsible for one well-defined subsystem.
+KRYON follows a modular layered architecture for research on secure UAV-assisted Intelligent Vehicular Networks (IoAV).
 
-This design significantly improves:
+Instead of placing all logic inside a single ns-3 simulation file, the framework separates networking, security, authentication, metrics, and future protocol implementations into independent components.
 
-- Maintainability
-- Extensibility
-- Code reuse
-- Testing
-- Research reproducibility
-
-Future authentication protocols can therefore be implemented without modifying the networking or simulation infrastructure.
-
----
-
-# Architectural Principles
-
-KRYON is designed around the following principles:
+The design emphasizes:
 
 - Separation of concerns
-- Engine-based modularity
-- Shared simulation context
-- Shared security context
-- Protocol independence
-- Pluggable authentication architecture
-- Reusable cryptographic interfaces
-- Minimal coupling
-- High cohesion
+- Extensibility
+- Reusability
+- Research reproducibility
+- Protocol interchangeability
 
 ---
 
 # High-Level Architecture
 
-```text
-                    +----------------------+
-                    |  ExperimentConfig    |
-                    +----------+-----------+
-                               |
-                               ▼
-                    +----------------------+
-                    | SimulationContext    |
-                    +----------+-----------+
-                               |
-    -------------------------------------------------------------------------
-    |          |             |             |             |                  |
-    ▼          ▼             ▼             ▼             ▼                  ▼
-Region     Mobility     Communication  Application   Metrics        Security
-Manager     Engine         Engine         Engine      Engine          Engine
-                                                                      |
-                                                     -----------------------------------
-                                                     |                                 |
-                                                     ▼                                 ▼
-                                             Crypto Engine                 Authentication Engine
-                                                                                  |
-                                                                                  ▼
-                                                                      Authentication Manager
-                                                                                  |
-                                                                                  ▼
-                                                                   RAP Authentication Protocol
+```
++------------------------------------------------------+
+|                  KRYON Simulator                     |
++------------------------------------------------------+
+                         |
+                         v
++------------------------------------------------------+
+|               Experiment Configuration               |
++------------------------------------------------------+
+                         |
+                         v
++------------------------------------------------------+
+|                Simulation Context                    |
++------------------------------------------------------+
+                         |
+        +----------------+----------------+
+        |                                 |
+        v                                 v
++--------------------+          +----------------------+
+| Communication      |          | Mobility             |
+| Engine             |          | Engine               |
++--------------------+          +----------------------+
+        |
+        v
++------------------------------------------------------+
+|                Security Engine                       |
++------------------------------------------------------+
+        |
+        +-------------------------------+
+        |                               |
+        v                               v
++--------------------+        +-------------------------+
+| Cryptography       |        | Authentication Engine   |
+| Engine             |        +-------------------------+
++--------------------+                    |
+                                          v
+                              +--------------------------+
+                              | Authentication Manager   |
+                              +--------------------------+
+                                          |
+                                          v
+                              +--------------------------+
+                              | Authentication Protocol  |
+                              +--------------------------+
+                                          |
+                                          v
+                              RAP Authentication Protocol
 ```
 
 ---
 
-# Core Components
+# Framework Layers
 
-## ExperimentConfig
+## 1. Core Layer
 
-The ExperimentConfig object stores all configurable simulation parameters.
+Responsible for framework-wide configuration and utilities.
 
-Responsibilities:
+Components
 
-- Number of regions
-- Number of UAVs
-- Number of vehicles
-- Simulation duration
-- Random seed
-- Experiment repetition
-- Output file locations
+- ExperimentConfig
+- Version
+- Logger
 
-Every engine receives a constant reference to the ExperimentConfig object during construction.
+Responsibilities
+
+- Command-line parsing
+- Version management
+- Framework logging
+- Global configuration
 
 ---
 
-## SimulationContext
+## 2. Simulation Layer
 
-SimulationContext is the central shared state of the framework.
+Provides shared runtime state.
 
-Instead of passing dozens of parameters between modules, all engines interact through a shared context.
+Primary component
 
-The context stores:
+- SimulationContext
 
-- Node containers
-- Network devices
-- IP interfaces
-- Mobility information
-- Flow monitor
-- Performance metrics
+Contains
+
+- Nodes
+- Devices
+- Interfaces
+- FlowMonitor
+- Metrics
 - SecurityContext
 
-This significantly reduces coupling between modules.
+Every engine receives a reference to the same SimulationContext.
 
 ---
 
-# Engine Architecture
+## 3. Communication Layer
 
-Each subsystem is implemented as an independent engine.
+Responsible for packet exchange.
 
-All engines follow the same lifecycle:
+Responsibilities
 
-```text
-Initialize()
-
-↓
-
-Execute()
-
-↓
-
-Finalize()
-```
-
-This common interface simplifies future extension of the framework.
+- WiFi configuration
+- IPv4 addressing
+- UDP applications
+- Traffic generation
 
 ---
 
-# Region Manager
+## 4. Security Layer
 
-Responsibilities:
+Coordinates all security operations.
 
-- Calculate simulation topology
-- Create UAV nodes
-- Create vehicle nodes
-- Install Internet stack
-- Configure routing
+Responsibilities
 
-Output:
+- Cryptography
+- Authentication
+- Future trust management
+- Future blockchain integration
 
-- Drone node container
-- Vehicle node container
+Main component
 
----
-
-# Mobility Engine
-
-Responsibilities:
-
-- Configure UAV mobility
-- Configure vehicle mobility
-- Deploy nodes inside the simulation region
-
-Current mobility model:
-
-- UAV altitude: 50–150 m
-- Vehicle ground mobility
-- Region scaling based on node density
+- SecurityEngine
 
 ---
 
-# Communication Engine
+## 5. Cryptography Layer
 
-Responsibilities:
+Provides reusable cryptographic services.
 
-- Configure WiFi
-- Install network devices
-- Assign IPv4 addresses
-- Configure wireless parameters
+Current engines
 
-Current implementation:
+- Random Engine
+- Hash Engine
+- ECC Engine
+- Key Generator
 
-- IEEE 802.11n
-- Ad-hoc mode
-- IPv4 networking
-- OLSR routing
+Future engines
 
----
-
-# Application Engine
-
-Responsibilities:
-
-- Install UDP servers
-- Install UDP clients
-- Generate authentication traffic
-
-Current communication pattern:
-
-Drone → Vehicle
-
-- Authentication Request
-- 836 Bytes
-
-Vehicle → Drone
-
-- Authentication Response
-- 68 Bytes
-
-Total protocol overhead:
-
-904 Bytes
+- PQC
+- Symmetric Encryption
+- Digital Signatures
+- Zero Knowledge Proofs
 
 ---
 
-# Metrics Engine
+## 6. Authentication Layer
 
-Responsibilities:
+Responsible for authentication workflows.
 
-- Install FlowMonitor
-- Execute simulation
-- Compute performance metrics
-- Export CSV results
+### Authentication Engine
 
-Current metrics:
+Coordinates authentication execution.
 
-- Throughput
-- End-to-End Delay
-- Jitter
-- Packet Delivery Ratio
-
-Results are automatically exported after every simulation.
-
----
-
-# Security Engine
-
-The Security Engine coordinates all security-related functionality.
-
-Responsibilities:
-
-- Initialize cryptographic services
-- Execute authentication
-- Record security events
-- Maintain security statistics
-- Finalize security modules
-
-The Security Engine does **not** implement any protocol directly.
-
-Instead, it delegates protocol execution to the Authentication Engine.
-
----
-
-# Crypto Engine
-
-CryptoEngine provides a unified interface for cryptographic operations.
-
-Current modules:
-
-- RandomEngine
-- HashEngine
-- KeyGenerator
-- ECCEngine
-
-Current role:
-
-The framework currently initializes these modules to validate the cryptographic architecture. Future protocol implementations will invoke these interfaces for actual cryptographic operations.
-
----
-
-# Authentication Engine
-
-AuthenticationEngine manages the complete authentication lifecycle.
-
-Responsibilities:
+Responsibilities
 
 - Receive authentication requests
 - Invoke AuthenticationManager
 - Store authentication results
-- Update AuthenticationContext
-
-The engine remains independent of any particular authentication protocol.
+- Record timing statistics
 
 ---
 
-# Authentication Manager
+### Authentication Manager
 
-AuthenticationManager acts as a protocol dispatcher.
+Selects the active authentication protocol.
 
-Responsibilities:
+Responsibilities
 
-- Initialize authentication protocol
-- Execute protocol
+- Initialize protocol
+- Execute authentication
 - Finalize protocol
 
-Current implementation:
-
-```text
-AuthenticationManager
-          │
-          ▼
-RAPAuthenticationProtocol
-```
-
-Future versions may select different protocols without modifying higher framework layers.
+This layer isolates the framework from protocol implementations.
 
 ---
 
-# RAP Authentication Protocol
+### Authentication Protocol Interface
 
-The Reference Authentication Protocol (RAP) validates the authentication architecture.
+```
+IAuthenticationProtocol
+```
 
-Current execution sequence:
+Every authentication protocol must implement this interface.
 
-```text
+Current implementation
+
+- RAPAuthenticationProtocol
+
+Future implementations
+
+- SLAP-IoAV
+- 2PQS-IoAV
+- DID
+- Blockchain
+- Post-Quantum
+
+---
+
+## 7. Metrics Layer
+
+Responsible for experiment evaluation.
+
+Main component
+
+- MetricsEngine
+
+Stores
+
+```
+ExperimentMetrics
+```
+
+Collected metrics
+
+### Network
+
+- Throughput
+- Delay
+- Jitter
+- PDR
+
+### Authentication
+
+- Protocol
+- Authentication time
+- Messages exchanged
+- Communication bytes
+- Authentication success
+
+---
+
+# Data Flow
+
+```
+ExperimentConfig
+        │
+        ▼
+SimulationContext
+        │
+        ▼
+Communication Engine
+        │
+        ▼
+Security Engine
+        │
+        ▼
+Authentication Engine
+        │
+        ▼
+Authentication Manager
+        │
+        ▼
+RAP Authentication Protocol
+        │
+        ▼
+AuthenticationResult
+        │
+        ▼
+ExperimentMetrics
+        │
+        ▼
+MetricsEngine
+        │
+        ▼
+CSV Export
+```
+
+---
+
+# Runtime Workflow
+
+```
+Start Simulation
+
+↓
+
+Initialize Engines
+
+↓
+
+Create Nodes
+
+↓
+
+Configure Network
+
+↓
+
+Install Applications
+
+↓
+
+Initialize Security
+
+↓
+
 Authentication Request
 
 ↓
 
-Challenge Generation
-
-↓
-
-Challenge Response
-
-↓
-
-Response Verification
-
-↓
-
-Authentication Result
-```
-
-The protocol currently performs a successful authentication without invoking cryptographic primitives. It serves as a reusable baseline for future secure authentication protocols.
-
----
-
-# Security Context
-
-SecurityContext stores all security-related information generated during simulation.
-
-Current contents:
-
-- Authentication context
-- Security events
-- Security sessions
-- Security statistics
-
-Future versions will also include:
-
-- Trust values
-- Blockchain data
-- DID information
-- Verifiable credentials
-- Zero-knowledge proofs
-- Session keys
-
----
-
-# Security Statistics
-
-The framework currently records:
-
-- Authentication attempts
-- Authentication successes
-- Authentication failures
-- Authentication success rate
-
-These statistics are maintained independently of the authentication protocol, ensuring compatibility with future implementations.
-
----
-
-# Current Authentication Workflow
-
-The authentication workflow currently executed by the framework is:
-
-```text
-Security Engine
-
-↓
-
-Authentication Engine
-
-↓
-
-Authentication Manager
-
-↓
-
-RAP Authentication Protocol
+Authentication Protocol
 
 ↓
 
@@ -390,75 +330,102 @@ Authentication Result
 
 ↓
 
-Security Event Recording
+FlowMonitor Statistics
 
 ↓
 
-Security Statistics Update
+Compute Metrics
 
 ↓
 
-Authentication Summary
+Export CSV
+
+↓
+
+Destroy Simulation
 ```
 
-This workflow establishes a reusable execution pipeline that future authentication schemes can adopt without changing the surrounding framework.
+---
+
+# Design Principles
+
+The framework follows the following software engineering principles.
+
+## Modularity
+
+Each subsystem is implemented independently.
 
 ---
 
-# Extensibility
+## Low Coupling
 
-The architecture has been designed to support future modules with minimal modification.
-
-Planned extensions include:
-
-- Multiple authentication protocols
-- Protocol plugin architecture
-- Trust management
-- Reputation systems
-- Blockchain integration
-- Smart contracts
-- Decentralized Identity (DID)
-- Verifiable Credentials (VC)
-- Zero-Knowledge Proofs
-- Physical Unclonable Functions (PUF)
-- Post-Quantum Cryptography
-
-Because all security functionality is routed through the Security Engine and Authentication Engine, these additions can be implemented without affecting the networking, mobility, or simulation infrastructure.
+Authentication protocols are isolated from the simulator.
 
 ---
 
-# Design Benefits
+## High Cohesion
 
-The current architecture provides:
-
-- Clear separation between simulation and protocol logic
-- Modular engines with well-defined responsibilities
-- Protocol-independent authentication framework
-- Reusable cryptographic interfaces
-- Shared simulation state through SimulationContext
-- Shared security state through SecurityContext
-- Improved maintainability
-- Simplified debugging
-- Easier experimentation
-- Long-term extensibility
+Each engine performs one primary responsibility.
 
 ---
 
-# Current Framework Maturity
+## Extensibility
+
+New authentication protocols can be added without modifying existing engines.
+
+---
+
+## Research Reproducibility
+
+Every experiment records:
+
+- Framework version
+- Timestamp
+- Run number
+- Configuration
+- Performance metrics
+- Authentication metrics
+
+---
+
+# Current Implementation Status
 
 | Component | Status |
 |-----------|--------|
-| Core Architecture | ✅ Stable |
-| Simulation Framework | ✅ Stable |
-| Communication Framework | ✅ Stable |
-| Security Framework | ✅ Stable |
-| Authentication Framework | ✅ Stable |
-| Cryptographic Framework | ✅ Stable |
-| Metrics Framework | ✅ Stable |
-| Extensibility | ✅ High |
+| Core | Complete |
+| Simulation | Complete |
+| Communication | Complete |
+| Security | Complete |
+| Cryptography | Complete |
+| Authentication | Complete |
+| Metrics | Complete |
+| RAP Protocol | Complete |
 
 ---
 
-# Conclusion
+# Planned Extensions
 
-KRYON now provides a reusable modular software architecture for secure IoAV research on ns-3. By separating simulation infrastructure from security and protocol implementations, the framework enables rapid development, evaluation, and comparison of authentication protocols while preserving maintainability and extensibility. Future research modules—including trust management, blockchain, decentralized identity, verifiable credentials, and post-quantum cryptography—can be integrated with minimal changes to the existing architecture.
+Version 1.2
+
+- Multiple authentication protocols
+- Runtime protocol selection
+- Trust Engine
+
+Version 1.3
+
+- Blockchain Engine
+
+Version 1.4
+
+- DID Framework
+
+Version 1.5
+
+- Post-Quantum Authentication
+- Zero Knowledge Authentication
+
+---
+
+# Architecture Summary
+
+KRYON is designed as a reusable research framework rather than a single-purpose simulator. Its layered architecture enables rapid implementation and evaluation of authentication and security protocols for UAV-assisted Intelligent Vehicular Networks while maintaining clean separation between networking, security, metrics, and protocol implementations.

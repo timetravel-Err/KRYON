@@ -1,339 +1,251 @@
 # KRYON
+### **KRYON: A Modular Research Framework for Secure UAV-Assisted Intelligent Vehicular Networks using ns-3**
 
-### A Modular ns-3 Research Framework for Secure UAV-Assisted Internet of Autonomous Vehicles (IoAV)
-
-<p align="center">
-<b>KRYON</b> is a modular research framework built on <b>ns-3.41</b> for designing, implementing, evaluating, and benchmarking secure communication protocols for UAV-assisted Internet of Autonomous Vehicles (IoAV).
-</p>
-
----
-
-# Overview
-
-KRYON transforms traditional monolithic ns-3 simulation scripts into a reusable, modular research framework suitable for long-term experimentation and protocol development.
-
-Rather than embedding every function inside a single simulation file, KRYON separates the simulator into independent engines responsible for topology generation, mobility, networking, applications, metrics, cryptography, authentication, and security management.
-
-The framework currently provides:
-
-- Modular simulation architecture
-- Automated experiment execution
-- Performance metric collection
-- Modular Security Framework
-- Modular Cryptographic Framework
-- Authentication Framework
-- Reference Authentication Protocol (RAP)
-- Shared Simulation Context
-- Shared Security Context
-- Clean separation between framework layers
-- Extensible plugin-based architecture for future security protocols
+![Version](https://img.shields.io/badge/version-v1.1.0-blue)
+![ns-3](https://img.shields.io/badge/ns--3-3.41-green)
+![Language](https://img.shields.io/badge/C++-17-orange)
+![Status](https://img.shields.io/badge/status-Research%20Framework-success)
 
 ---
 
-# Features
+## Overview
 
-## Simulation
+KRYON is a modular research framework developed on top of **ns-3.41** for evaluating secure communication protocols in **UAV-assisted Intelligent Vehicular Networks (IoAV)**.
 
-- Modular engine-based architecture
-- Region-based UAV deployment
-- 3D UAV mobility
-- IEEE 802.11n Ad-hoc communication
-- IPv4 networking
-- Bidirectional UDP application traffic
-- Automated experiment execution
-- FlowMonitor integration
-- CSV result export
+Unlike conventional ns-3 simulation scripts, KRYON follows a layered software architecture where networking, security, authentication, cryptography, metrics, and protocol implementations are separated into reusable modules.
 
-## Security
+The framework is designed to support rapid implementation and evaluation of future authentication, blockchain, trust, post-quantum cryptography, and privacy-preserving protocols without modifying the simulator core.
 
-- Shared SecurityContext
+---
+
+# Current Features (v1.1.0)
+
+## Core Framework
+
+- Modular Engine Architecture
+- Shared SimulationContext
+- Centralized Experiment Configuration
+- Version Management
+- Research-oriented Logging
+
+---
+
+## Network Layer
+
+- UAV Mobility
+- Autonomous Vehicle Mobility
+- IEEE 802.11n Communication
+- IPv4 Networking
+- UDP Traffic Generation
+- FlowMonitor Integration
+
+---
+
+## Security Layer
+
 - Security Engine
-- Cryptographic Engine
+- Cryptography Engine
+- Hash Engine
+- Random Engine
+- ECC Engine
+- Key Generation Engine
+
+---
+
+## Authentication Framework
+
 - Authentication Engine
 - Authentication Manager
-- Reference Authentication Protocol (RAP)
-- Authentication statistics
-- Security statistics
-- Session management
-- Security event logging
-- Authentication request/result management
-- Reusable plugin architecture for authentication protocols
-
-## Framework
-
-- Shared SimulationContext
-- Central Experiment Configuration
-- Modular engines
-- Clean interface separation
-- Reproducible research workflow
+- Plugin-ready Authentication Architecture
+- RAP Authentication Protocol
+- Authentication Timing
+- Authentication Statistics
 
 ---
 
-# Project Structure
+## Metrics Framework
 
-```text
-KRYON/
-├── configs/
-├── docs/
-│   ├── Architecture.md
-│   ├── CodingStandards.md
-│   ├── DeveloperGuide.md
-│   └── PROJECT_STATUS.md
-├── examples/
-├── include/
-│   ├── authentication/
-│   │   ├── protocols/
-│   │   │   └── rap/
-│   │   ├── AuthenticationEngine.h
-│   │   ├── AuthenticationManager.h
-│   │   ├── AuthenticationContext.h
-│   │   └── ...
-│   ├── core/
-│   ├── crypto/
-│   ├── metrics/
-│   ├── mobility/
-│   ├── network/
-│   ├── protocol/
-│   ├── region/
-│   ├── security/
-│   ├── simulation/
-│   └── utils/
-├── results/
-├── scripts/
-└── tests/
-```
+KRYON exports both network and authentication metrics.
 
----
-
-# Framework Architecture
-
-```text
-                    +----------------------+
-                    |  ExperimentConfig    |
-                    +----------+-----------+
-                               |
-                    +----------v-----------+
-                    |  SimulationContext   |
-                    +----------+-----------+
-                               |
- -------------------------------------------------------------------------
- |          |           |           |           |            |            |
- |          |           |           |           |            |            |
-Region   Mobility   Communication  Application Metrics   Security Engine
-Manager   Engine       Engine         Engine     Engine
-                                                         |
-                                                         |
-                                            +------------+-------------+
-                                            |                          |
-                                     Crypto Engine         Authentication Engine
-                                            |                          |
-                                            |                 Authentication Manager
-                                            |                          |
-                                            |                 RAP Authentication Protocol
-```
-
----
-
-# Current Components
-
-| Component | Status |
-|-----------|--------|
-| Core Framework | ✅ Complete |
-| Region Manager | ✅ Complete |
-| Mobility Engine | ✅ Complete |
-| Communication Engine | ✅ Complete |
-| Application Engine | ✅ Complete |
-| Metrics Engine | ✅ Complete |
-| Security Framework | ✅ Complete |
-| Cryptographic Framework | ✅ Complete |
-| Authentication Framework | ✅ Complete |
-| Authentication Manager | ✅ Complete |
-| RAP Reference Protocol | ✅ Complete |
-| Authentication Plugin Architecture | ✅ Complete |
-| Trust Management | ⏳ Planned |
-| Blockchain Framework | ⏳ Planned |
-| DID / VC | ⏳ Planned |
-| Zero-Knowledge Proofs | ⏳ Planned |
-| Post-Quantum Authentication | ⏳ Planned |
-
----
-
-# Authentication Workflow
-
-The current framework implements a complete reference authentication lifecycle.
-
-```text
-Security Engine
-       │
-       ▼
-Authentication Engine
-       │
-       ▼
-Authentication Manager
-       │
-       ▼
-RAP Authentication Protocol
-       │
-       ▼
-Authentication Result
-       │
-       ▼
-Security Statistics
-```
-
-The RAP protocol is intentionally lightweight and serves as a reference implementation used to validate the authentication architecture before integrating advanced cryptographic protocols.
-
----
-
-# Performance Metrics
-
-The framework currently exports:
+### Network Metrics
 
 - Throughput
 - End-to-End Delay
 - Jitter
 - Packet Delivery Ratio (PDR)
 
-Current security statistics include:
+### Authentication Metrics
 
-- Authentication Attempts
-- Authentication Successes
-- Authentication Failures
-- Authentication Success Rate
-- Session Statistics
-- Security Events
-
-Future releases will add:
-
-- Authentication Latency
-- Cryptographic Cost
-- Computational Overhead
-- Communication Overhead
-- Trust Metrics
-- Energy Consumption
+- Authentication Protocol
+- Authentication Time
+- Messages Exchanged
+- Communication Cost
+- Authentication Success
 
 ---
 
-# Requirements
+# Framework Architecture
 
-- Ubuntu 22.04+
-- ns-3.41
-- GCC 11+
-- CMake
-- Python 3.10+
+```
+Application
+      │
+Communication Engine
+      │
+Security Engine
+      │
+Authentication Engine
+      │
+Authentication Manager
+      │
+Authentication Protocol
+      │
+RAP Authentication Protocol
+```
+
+---
+
+# Project Structure
+
+```
+KRYON/
+
+├── docs/
+│   ├── Architecture.md
+│   ├── DeveloperGuide.md
+│   └── PROJECT_STATUS.md
+│
+├── include/
+│
+│   ├── application/
+│   ├── communication/
+│   ├── core/
+│   ├── cryptography/
+│   ├── metrics/
+│   ├── mobility/
+│   ├── network/
+│   ├── security/
+│   ├── authentication/
+│   ├── simulation/
+│   └── utils/
+│
+└── scratch/
+    └── kryon/
+```
+
+---
+
+# Example CSV Output
+
+```
+FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throughput,Delay,Jitter,PDR,AuthTimeMs,AuthMessages,AuthBytes,AuthSuccess
+
+1.1.0,2026-07-21 11:36:57,1,60,1,5,10,RAP,43.8994,4.06146,2.46386,0.850101,0.045422,4,904,1
+```
 
 ---
 
 # Build
 
-Configure
-
-```bash
-./ns3 configure
 ```
-
-Build
-
-```bash
 ./ns3 build
 ```
 
----
+Run
 
-# Running
-
-Single simulation
-
-```bash
+```
 ./ns3 run scratch/kryon/kryon-simulator
 ```
 
-Example
+---
 
-```bash
-./ns3 run "scratch/kryon/kryon-simulator --numRegions=1 --dronesPerRegion=20 --avsPerRegion=20 --run=1"
+# Example Command Line
+
+```
+./ns3 run "scratch/kryon/kryon-simulator \
+--numRegions=1 \
+--dronesPerRegion=10 \
+--avsPerRegion=20 \
+--simTime=60 \
+--run=5"
 ```
 
 ---
 
-# Batch Experiments
+# Current Authentication Protocol
 
-```bash
-python3 KRYON/scripts/run_experiments.py
-```
+Currently implemented
 
-Results are exported to
+- RAP Authentication Protocol
 
-```text
-KRYON/results/results.csv
-```
+Framework ready for
 
----
-
-# Current Framework Status
-
-The framework has now completed the foundational architecture required for protocol research.
-
-Implemented:
-
-- Modular simulation engines
-- Security framework
-- Cryptographic framework
-- Authentication framework
-- Reference authentication protocol
-- Performance monitoring
-- Security statistics
-- Plugin-ready protocol architecture
-
-The next development phase focuses on replacing the RAP protocol with real authentication protocols such as ECC, PUF, blockchain-assisted authentication, and post-quantum cryptography.
+- 2PQS-IoAV
+- SLAP-IoAV
+- Blockchain Authentication
+- DID Authentication
+- Zero Knowledge Authentication
+- Post-Quantum Authentication
 
 ---
 
-# Version History
+# Research Roadmap
 
-| Version | Description |
-|----------|-------------|
-| **v0.1.0** | Initial modular framework |
-| **v0.1.1** | Batch experiment execution |
-| **v0.2.0** | Security framework |
-| **v0.3.0** | Cryptographic framework |
-| **v0.4.0** | Authentication framework |
-| **v0.5.0** | Reference Authentication Protocol (RAP), Authentication Manager, Security Statistics |
-| **v1.0** | Initial stable modular research framework |
+## Completed
+
+- Modular Framework
+- Security Engine
+- Cryptography Engine
+- Authentication Framework
+- RAP Authentication
+- Experiment Metrics
+- Research-grade CSV Export
 
 ---
 
-# Research Vision
+## Planned (v1.2)
 
-KRYON is designed as a reusable research platform for secure UAV-assisted Internet of Autonomous Vehicles rather than a single simulation.
+- Multiple Authentication Protocols
+- Runtime Protocol Selection
+- Trust Engine
+- Blockchain Engine
+- Comparative Benchmarking
 
-Planned research directions include:
+---
 
-- Secure Authentication Protocols
-- ECC-based Authentication
-- PUF-based Authentication
-- Post-Quantum Cryptography
-- Blockchain Integration
+# Publications
+
+This framework is being developed to support research in
+
+- UAV-assisted Intelligent Vehicular Networks
+- Secure IoAV
+- Authentication Protocol Evaluation
 - Trust Management
-- Decentralized Identity (DID)
-- Verifiable Credentials (VC)
-- Zero-Knowledge Proofs (ZKP)
-- Performance Benchmarking
-
----
-
-# Citation
-
-If you use KRYON in academic research, please cite the corresponding publication.
-
-Citation details will be added after publication.
+- Blockchain-enabled Vehicular Networks
+- Post-Quantum Security
 
 ---
 
 # License
 
-This project is intended for academic, educational, and research use.
+Academic Research Framework
 
+Developed for research and educational purposes.
+
+---
+
+# Framework Information
+
+Framework : KRYON
+
+Version : **v1.1.0**
+
+Simulator : **ns-3.41**
+
+Language : **C++17**
+
+Architecture : Modular Research Framework
+
+Status : Stable
 ---
 
 # Author

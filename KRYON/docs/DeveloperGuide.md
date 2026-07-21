@@ -1,38 +1,129 @@
 # KRYON Developer Guide
 
-## Extending the KRYON Research Framework
+**Framework:** KRYON  
+**Version:** v1.1.0  
+**Simulator:** ns-3.41
 
 ---
 
-# Introduction
+# Purpose
 
-KRYON is designed as a modular research framework rather than a single simulation program.
+This guide explains how to extend KRYON while preserving its modular architecture.
 
-The primary goal of the framework is to allow researchers to develop, integrate, and evaluate new communication and security protocols without modifying the underlying simulation infrastructure.
+KRYON has been designed so that new research ideas can be implemented as independent modules rather than modifying existing framework code.
 
-Every major subsystem is encapsulated inside an independent engine with clearly defined responsibilities.
+Typical extensions include
 
----
-
-# Development Philosophy
-
-When extending KRYON, developers should follow these principles:
-
-- Keep modules independent.
-- Avoid modifying unrelated engines.
-- Prefer composition over duplication.
-- Reuse SimulationContext.
-- Reuse SecurityContext.
-- Follow the existing engine lifecycle.
-- Preserve protocol independence.
+- Authentication protocols
+- Cryptographic algorithms
+- Trust models
+- Blockchain services
+- Routing algorithms
+- Mobility models
+- Performance metrics
 
 ---
 
-# Engine Lifecycle
+# Framework Philosophy
 
-Every engine follows the same execution model.
+Do **not** place research code directly inside
 
-```text
+```
+scratch/kryon/kryon-simulator.cc
+```
+
+Instead,
+
+```
+Simulator
+        │
+        ▼
+Engine
+        │
+        ▼
+Manager
+        │
+        ▼
+Protocol
+```
+
+The simulator should only orchestrate execution.
+
+---
+
+# Directory Layout
+
+```
+KRYON/
+
+include/
+
+application/
+authentication/
+communication/
+core/
+cryptography/
+metrics/
+mobility/
+network/
+security/
+simulation/
+utils/
+
+docs/
+```
+
+Each directory has one responsibility.
+
+---
+
+# Core Components
+
+## ExperimentConfig
+
+Responsible for
+
+- command-line parsing
+- experiment configuration
+- runtime parameters
+
+Example
+
+```cpp
+ExperimentConfig config;
+
+config.Parse(argc, argv);
+```
+
+---
+
+## SimulationContext
+
+The SimulationContext stores all runtime information shared between framework components.
+
+Examples
+
+```cpp
+m_context.drones
+
+m_context.avs
+
+m_context.metrics
+
+m_context.security
+```
+
+Avoid creating duplicate global variables.
+
+Everything should be stored inside SimulationContext.
+
+---
+
+# Engine Pattern
+
+Every subsystem follows the same lifecycle.
+
+```cpp
 Initialize()
 
 ↓
@@ -44,168 +135,101 @@ Execute()
 Finalize()
 ```
 
-Initialization should allocate resources.
+Example
 
-Execution should perform protocol-specific work.
+```cpp
+CryptoEngine
 
-Finalize should release resources and print summary information if required.
-
----
-
-# Current Engine Structure
-
-```text
-RegionManager
-
-↓
-
-MobilityEngine
-
-↓
-
-CommunicationEngine
-
-↓
-
-ApplicationEngine
-
-↓
-
-SecurityEngine
-
-↓
+AuthenticationEngine
 
 MetricsEngine
 ```
-
-Each engine performs one clearly defined responsibility.
-
----
-
-# Shared Context Objects
-
-Two shared context objects are available throughout the framework.
-
-## SimulationContext
-
-Stores simulation-wide information including:
-
-- Nodes
-- Devices
-- Interfaces
-- Flow Monitor
-- Performance metrics
-- SecurityContext
-
-Every engine receives a reference to the same SimulationContext.
-
----
-
-## SecurityContext
-
-Stores all security-related state.
-
-Current contents include:
-
-- AuthenticationContext
-- SecurityEvents
-- SecuritySessions
-- SecurityStatistics
-
-Future modules should extend SecurityContext instead of introducing additional global state.
 
 ---
 
 # Adding a New Engine
 
-A new engine should follow the existing framework style.
+Suppose you want to add
 
-Example:
-
-```cpp
-class TrustEngine
-{
-public:
-
-    void Initialize();
-
-    void Execute();
-
-    void Finalize();
-
-};
+```
+TrustEngine
 ```
 
-The engine should receive:
+Steps
 
-```cpp
-const ExperimentConfig&
-SimulationContext&
+### 1
+
+Create
+
 ```
-
-through its constructor.
+include/trust/
+```
 
 ---
 
-# Adding a New Authentication Protocol
+### 2
 
-Authentication protocols are intentionally separated from the framework.
+Implement
 
-Current hierarchy:
-
-```text
-AuthenticationEngine
-
-↓
-
-AuthenticationManager
-
-↓
-
-RAPAuthenticationProtocol
 ```
-
-To add a new protocol:
-
-1. Create a new protocol directory.
-
-Example:
-
-```text
-authentication/
-    protocols/
-        slap/
-        pqc/
-        did/
-        blockchain/
+TrustEngine.h
 ```
-
-2. Implement the protocol.
-
-Example:
-
-```cpp
-class SLAPAuthenticationProtocol :
-    public IAuthenticationProtocol
-{
-};
-```
-
-3. Update AuthenticationManager to select the desired protocol.
-
-No changes should be required elsewhere in the framework.
 
 ---
 
-# Authentication Workflow
+### 3
 
-The authentication pipeline is:
+Receive
 
-```text
+```cpp
+ExperimentConfig
+
+SimulationContext
+```
+
+through the constructor.
+
+Example
+
+```cpp
+TrustEngine(
+
+const ExperimentConfig& config,
+
+SimulationContext& context)
+```
+
+---
+
+### 4
+
+Expose
+
+```cpp
+Initialize()
+
+Finalize()
+```
+
+---
+
+### 5
+
+Instantiate inside
+
+```
 SecurityEngine
+```
 
-↓
+not inside the simulator.
 
+---
+
+# Authentication Framework
+
+Authentication is intentionally split into three layers.
+
+```
 AuthenticationEngine
 
 ↓
@@ -215,207 +239,412 @@ AuthenticationManager
 ↓
 
 AuthenticationProtocol
-
-↓
-
-AuthenticationResult
-
-↓
-
-SecurityStatistics
 ```
 
-Future authentication protocols should integrate into this workflow without modifying the surrounding engines.
+---
+
+## Authentication Engine
+
+Responsible for
+
+- request creation
+- timing
+- statistics
+- workflow execution
+
+Never implement protocol logic here.
 
 ---
 
-# Using CryptoEngine
+## Authentication Manager
 
-Cryptographic operations should always be performed through CryptoEngine.
+Responsible for
 
-Current modules include:
+- selecting protocol
+- initializing protocol
+- executing protocol
+- finalizing protocol
 
-- RandomEngine
-- HashEngine
-- KeyGenerator
-- ECCEngine
-
-Future additions may include:
-
-- AES
-- SHA-3
-- PQC
-- PUF
-- Digital Certificates
-
-Higher-level modules should never directly invoke individual cryptographic engines.
+Only the manager knows which protocol is active.
 
 ---
 
-# Recording Security Events
+## Authentication Protocol
 
-Security-related operations should be recorded through SecurityEngine.
-
-Example:
+Every protocol implements
 
 ```cpp
-SecurityEvent event;
-
-event.type = SecurityEventType::AUTH_SUCCESS;
-
-RecordEvent(event);
+IAuthenticationProtocol
 ```
 
-Avoid manually modifying SecurityStatistics.
+Current implementation
 
-SecurityEngine automatically updates statistics based on recorded events.
+```
+RAPAuthenticationProtocol
+```
+
+Future implementations
+
+```
+SLAP-IoAV
+
+2PQS-IoAV
+
+Blockchain
+
+DID
+
+Post Quantum
+```
 
 ---
 
-# Exporting Metrics
+# Adding a New Authentication Protocol
 
-Performance metrics should be stored inside SimulationContext.
+Example
 
-MetricsEngine is responsible for exporting results.
+```
+SLAPAuthenticationProtocol
+```
 
-New metrics should be added to:
+Create
 
-- SimulationContext
-- MetricsEngine
-- CSV exporter
+```
+authentication/protocols/slap/
+```
 
-Avoid writing output files from other engines.
+Implement
+
+```cpp
+class SLAPAuthenticationProtocol
+    : public IAuthenticationProtocol
+```
+
+Implement
+
+```cpp
+Initialize()
+
+Authenticate()
+
+Finalize()
+```
+
+Register it inside
+
+```
+AuthenticationManager
+```
+
+No other framework component should require modification.
+
+---
+
+# Metrics Framework
+
+Network metrics are computed using
+
+```
+FlowMonitor
+```
+
+Authentication metrics are produced by
+
+```
+AuthenticationEngine
+```
+
+All metrics are stored inside
+
+```
+ExperimentMetrics
+```
+
+Current metrics
+
+```
+Throughput
+
+Delay
+
+Jitter
+
+PDR
+
+Authentication Time
+
+Messages
+
+Bytes
+
+Success
+```
+
+---
+
+# Adding New Metrics
+
+Example
+
+```
+CPU Utilization
+```
+
+### Step 1
+
+Add field
+
+```cpp
+double cpuUsage;
+```
+
+inside
+
+```
+ExperimentMetrics
+```
+
+---
+
+### Step 2
+
+Compute value inside
+
+```
+MetricsEngine
+```
+
+---
+
+### Step 3
+
+Export to CSV.
+
+No other files should require modification.
 
 ---
 
 # Logging
 
-Use the framework logger.
-
-Example:
+Always use
 
 ```cpp
-Logger::Info("Security Engine initialized.");
+Logger::Info(...)
 ```
 
-Avoid using:
+instead of
 
 ```cpp
 std::cout
 ```
 
-inside framework components.
+Benefits
+
+- consistent output
+- centralized logging
+- easier debugging
 
 ---
 
-# Coding Style
+# Version Management
 
-Follow the existing project conventions.
+Framework version is stored in
 
-## Naming
-
-Classes
-
-```text
-PascalCase
+```
+Version.h
 ```
 
-Functions
+Never hardcode version numbers.
 
-```text
-PascalCase
-```
+Use
 
-Variables
-
-```text
-camelCase
-```
-
-Private members
-
-```text
-m_variable
-```
-
-Constants
-
-```text
-UPPER_CASE
+```cpp
+Version::FRAMEWORK_VERSION
 ```
 
 ---
 
-# File Organization
+# CSV Export
 
-New modules should be placed inside their corresponding directory.
+Current CSV columns
 
-Example:
+```
+FrameworkVersion
 
-```text
-include/
+Timestamp
 
-authentication/
+Run
 
-crypto/
+SimulationTime
 
-metrics/
+Regions
 
-mobility/
+Drones
 
-network/
+AVs
 
-protocol/
+Protocol
 
-security/
+Throughput
 
-simulation/
+Delay
+
+Jitter
+
+PDR
+
+AuthTimeMs
+
+AuthMessages
+
+AuthBytes
+
+AuthSuccess
 ```
 
-Avoid placing unrelated code inside existing modules.
+Every new metric should be added
+
+1. ExperimentMetrics
+
+2. MetricsEngine
+
+3. CSV Export
 
 ---
 
-# Testing
+# Coding Guidelines
 
-Every new protocol should satisfy the following requirements.
+Use
 
-- Build successfully.
-- Execute without runtime errors.
-- Produce reproducible output.
-- Integrate with SecurityEngine.
-- Update SecurityStatistics.
-- Export metrics correctly.
+- C++17
+- Header-only modules where practical
+- RAII
+- Smart pointers
+- const references
+- explicit ownership
+
+Avoid
+
+- global variables
+- duplicated state
+- protocol-specific logic inside engines
+- hardcoded experiment values
 
 ---
 
-# Planned Extensions
+# Recommended Development Workflow
 
-Future framework development includes:
+```
+Implement feature
 
-- Authentication plugin architecture
-- Trust management
-- Blockchain integration
-- Decentralized Identity (DID)
-- Verifiable Credentials (VC)
-- Zero-Knowledge Proofs
-- Physical Unclonable Functions (PUF)
+↓
+
+Build
+
+↓
+
+Run simulator
+
+↓
+
+Verify log
+
+↓
+
+Verify CSV
+
+↓
+
+Update documentation
+
+↓
+
+Commit
+
+↓
+
+Tag release
+```
+
+---
+
+# Git Workflow
+
+Feature
+
+```
+git checkout -b feature/new-module
+```
+
+Commit
+
+```
+git add .
+
+git commit
+```
+
+Release
+
+```
+git tag
+```
+
+---
+
+# Current Stable Release
+
+```
+v1.1.0
+```
+
+Stable modules
+
+- Core
+- Communication
+- Security
+- Cryptography
+- Authentication
+- Metrics
+
+---
+
+# Planned Development
+
+## v1.2
+
+- Multiple Authentication Protocols
+- Trust Engine
+
+---
+
+## v1.3
+
+- Blockchain Engine
+
+---
+
+## v1.4
+
+- DID Framework
+
+---
+
+## v1.5
+
+- Zero Knowledge Authentication
 - Post-Quantum Cryptography
-- Multi-chain interoperability
-
-The current architecture has been designed so these modules can be added with minimal modification to existing code.
 
 ---
 
 # Contributing
 
-When contributing to KRYON:
+When adding a new module
 
-- Preserve modularity.
-- Minimize coupling.
 - Keep engines independent.
-- Reuse shared context objects.
-- Document architectural changes.
-- Update PROJECT_STATUS.md after major milestones.
+- Use SimulationContext.
+- Reuse ExperimentConfig.
+- Update documentation.
+- Maintain backward compatibility.
 
-Following these guidelines ensures that KRYON remains maintainable, extensible, and suitable as a long-term research framework for secure UAV-assisted IoAV systems.
+Following these principles ensures that KRYON remains a reusable and extensible research framework for future protocol evaluation.
