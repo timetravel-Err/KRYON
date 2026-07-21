@@ -20,10 +20,10 @@
 #include "../core/ExperimentConfig.h"
 #include "../simulation/SimulationContext.h"
 #include "../core/Logger.h"
-
+#include <memory>
 #include "AuthenticationRequest.h"
 #include "AuthenticationResult.h"
-
+#include "IAuthenticationProtocol.h"
 #include "protocols/rap/RAPAuthenticationProtocol.h"
 namespace kryon
 {
@@ -43,25 +43,59 @@ public:
 {
     Logger::Info("Authentication Manager starting...");
 
-    Logger::Info(
-        "Authentication protocol: REFERENCE");
+switch (m_config.authenticationProtocol)
+{
+ case AuthenticationProtocolType::REFERENCE:
 
-    m_protocol.Initialize();
+    Logger::Info("Authentication protocol : RAP");
+
+    m_protocol =
+        std::make_unique<RAPAuthenticationProtocol>();
+
+    break;
+
+default:
 
     Logger::Info(
-        "Authentication Manager initialized.");
+        "Requested protocol not implemented. Using RAP.");
+
+    m_protocol =
+        std::make_unique<RAPAuthenticationProtocol>();
+
+    break;
+}
+
+m_protocol->Initialize();
+
+Logger::Info("Authentication Manager initialized.");
 }
     AuthenticationResult Authenticate(
         const AuthenticationRequest& request)
     {
-        return m_protocol.Authenticate(request);
+         if (m_protocol)
+    {
+        return m_protocol->Authenticate(request);
+    }
+
+    AuthenticationResult result;
+
+    result.requestId = request.requestId;
+    result.method = request.method;
+    result.status = AuthenticationStatus::FAILED;
+    result.authenticated = false;
+    result.reason = "Authentication protocol not initialized.";
+
+    return result;
     }
 
     void Finalize()
     {
-        m_protocol.Finalize();
+       if (m_protocol)
+    {
+        m_protocol->Finalize();
+    }
 
-        Logger::Info("Authentication Manager finalized.");
+    Logger::Info("Authentication Manager finalized.");
     }
 
 private:
@@ -70,7 +104,7 @@ private:
 
     SimulationContext& m_context;
 
-    RAPAuthenticationProtocol m_protocol;
+    std::unique_ptr<IAuthenticationProtocol> m_protocol;
 };
 
 }

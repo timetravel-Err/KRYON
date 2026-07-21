@@ -38,6 +38,10 @@
 #include "ns3/flow-monitor-module.h"
 #include "ns3/core-module.h"
 #include <fstream>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 namespace kryon
 {
@@ -118,19 +122,19 @@ void ComputeMetrics()
         }
     }
 
-    m_context.throughput =
+    m_context.metrics.throughput =
         (flowCount > 0) ?
         totalThroughput / flowCount : 0.0;
 
-    m_context.delay =
+    m_context.metrics.delay =
         (flowCount > 0) ?
         totalDelay / flowCount : 0.0;
 
-    m_context.jitter =
+    m_context.metrics.jitter =
         (flowCount > 0) ?
         totalJitter / flowCount : 0.0;
 
-    m_context.pdr =
+    m_context.metrics.pdr =
         (totalTx > 0) ?
         double(totalRx) / totalTx : 0.0;
 
@@ -145,19 +149,57 @@ void ExportResults()
     std::ofstream out(
         m_config.csvFile,
         std::ios::app);
+		
+	/* ---------- Timestamp ---------- */
 
-    if (writeHeader)
-    {
-        out << "Regions,Drones,AVs,Throughput,Delay,Jitter,PDR\n";
-    }
+auto now =
+    std::chrono::system_clock::now();
 
-    out << m_config.numRegions << ","
-        << m_config.dronesPerRegion << ","
-        << m_config.avsPerRegion << ","
-        << m_context.throughput << ","
-        << m_context.delay << ","
-        << m_context.jitter << ","
-        << m_context.pdr << "\n";
+std::time_t nowTime =
+    std::chrono::system_clock::to_time_t(now);
+
+std::ostringstream timestamp;
+
+timestamp << std::put_time(
+    std::localtime(&nowTime),
+    "%Y-%m-%d %H:%M:%S");	
+
+   if (writeHeader)
+{
+    out << "FrameworkVersion,"
+    << "Timestamp,"
+    << "Run,"
+    << "SimulationTime,"
+    << "Regions,"
+    << "Drones,"
+    << "AVs,"
+    << "Protocol,"
+    << "Throughput,"
+    << "Delay,"
+    << "Jitter,"
+    << "PDR,"
+    << "AuthTimeMs,"
+    << "AuthMessages,"
+    << "AuthBytes,"
+    << "AuthSuccess\n";
+}
+out << "1.1.0" << ","
+    << timestamp.str() << ","
+    << m_config.run << ","
+    << m_config.simTime << ","
+    << m_config.numRegions << ","
+    << m_config.dronesPerRegion << ","
+    << m_config.avsPerRegion << ","
+    << m_context.metrics.authenticationProtocol << ","
+    << m_context.metrics.throughput << ","
+    << m_context.metrics.delay << ","
+    << m_context.metrics.jitter << ","
+    << m_context.metrics.pdr << ","
+    << m_context.metrics.authenticationTimeMs << ","
+    << m_context.metrics.authenticationMessages << ","
+    << m_context.metrics.authenticationBytes << ","
+    << (m_context.metrics.authenticationSuccess ? 1 : 0)
+    << "\n";
 
     out.close();
 

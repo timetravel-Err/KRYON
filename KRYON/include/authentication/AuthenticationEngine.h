@@ -31,7 +31,7 @@
 #include "AuthenticationResult.h"
 #include "AuthenticationTypes.h"
 #include "AuthenticationManager.h"
-
+#include <chrono>
 namespace kryon
 {
 
@@ -49,6 +49,8 @@ public:
 
     void Initialize()
     {
+		m_manager.Initialize();
+
         Logger::Info("Authentication Engine initialized.");
     }
 
@@ -68,11 +70,37 @@ public:
 
     AuthenticationRequest request =
         m_context.security.authentication.requests.back();
+		
+	auto start =
+    std::chrono::high_resolution_clock::now();	
 
     AuthenticationResult result =
         m_manager.Authenticate(request);
+	
+	auto end =
+    std::chrono::high_resolution_clock::now();
+
+	result.authenticationTimeMs =
+    std::chrono::duration<double, std::milli>(end - start).count();
 
     m_context.security.authentication.results.push_back(result);
+	
+	/* ---------- Store experiment metrics ---------- */
+
+m_context.metrics.authenticationProtocol =
+    result.protocolName;
+
+m_context.metrics.authenticationTimeMs =
+    result.authenticationTimeMs;
+
+m_context.metrics.authenticationMessages =
+    result.messagesExchanged;
+
+m_context.metrics.authenticationBytes =
+    result.bytesExchanged;
+
+m_context.metrics.authenticationSuccess =
+    result.authenticated;
 
     Logger::Info("========== Authentication Summary ==========");
 

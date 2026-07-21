@@ -45,6 +45,8 @@ public:
 	AuthenticationProtocolType authenticationProtocol =
     AuthenticationProtocolType::REFERENCE;
 
+	std::string protocol = "REFERENCE";
+	
     void Parse(int argc, char *argv[])
     {
         ns3::CommandLine cmd(__FILE__);
@@ -72,8 +74,25 @@ public:
         cmd.AddValue("csvFile",
                      "CSV output file",
                      csvFile);
+					 
+		cmd.AddValue("protocol",
+             "Authentication protocol",
+             protocol);			 
 
         cmd.Parse(argc, argv);
+		
+		if (protocol == "REFERENCE" ||
+    protocol == "RAP")
+{
+    authenticationProtocol =
+        AuthenticationProtocolType::REFERENCE;
+}
+else
+{
+    NS_FATAL_ERROR(
+        "Unsupported authentication protocol: "
+        << protocol);
+}
     }
 };
 

@@ -26,7 +26,7 @@ class Version
 public:
 
     static constexpr const char* FRAMEWORK_NAME = "KRYON";
-    static constexpr const char* FRAMEWORK_VERSION = "0.1.0";
+    static constexpr const char* FRAMEWORK_VERSION = "1.1.0";
     static constexpr const char* NS3_VERSION = "3.41";
 
     static std::string GetFrameworkVersion()
