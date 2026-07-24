@@ -88,19 +88,31 @@ Logger::Info("Authentication Manager initialized.");
     return result;
     }
 
-    void Finalize()
-    {
-       if (m_protocol)
+void Finalize()
+{
+    if (m_protocol)
     {
         m_protocol->Finalize();
     }
 
     Logger::Info("Authentication Manager finalized.");
-    }
+}
 
+void SetCryptoEngine(CryptoEngine* crypto)
+{
+    m_crypto = crypto;
+
+    if (auto* rap =
+        dynamic_cast<RAPAuthenticationProtocol*>(m_protocol.get()))
+    {
+        rap->SetCryptoEngine(crypto);
+    }
+}
 private:
 
     const ExperimentConfig& m_config;
+	
+	CryptoEngine* m_crypto = nullptr;
 
     SimulationContext& m_context;
 

@@ -33,7 +33,7 @@
 
 #include "AuthenticationRequest.h"
 #include "AuthenticationResult.h"
-
+#include "../crypto/CryptoEngine.h"
 namespace kryon
 {
 
@@ -47,7 +47,7 @@ public:
      * Initialize protocol resources.
      */
     virtual void Initialize() = 0;
-
+	//virtual void Initialize( CryptoEngine& crypto) = 0;
     /**
      * Execute one authentication operation.
      */

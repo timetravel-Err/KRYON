@@ -46,7 +46,10 @@ public:
       m_manager(config, context)
 {
 }
-
+void SetCryptoEngine(CryptoEngine* crypto)
+{
+    m_manager.SetCryptoEngine(crypto);
+}
     void Initialize()
     {
 		m_manager.Initialize();

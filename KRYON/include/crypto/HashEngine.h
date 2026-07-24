@@ -1,5 +1,7 @@
 #ifndef KRYON_HASH_ENGINE_H
 #define KRYON_HASH_ENGINE_H
+#include <openssl/sha.h>
+#include <cstring>
 
 /**
  * ----------------------------------------------------------
@@ -67,29 +69,32 @@ public:
      * Compute Hash from ByteArray
      * ------------------------------------------------------*/
 
-    HashValue ComputeHash(const ByteArray& input)
-    {
-        HashValue hash;
+   HashValue ComputeHash(const ByteArray& input)
+{
+    HashValue hash;
 
-        // Placeholder implementation
-        hash.bytes = input;
+    hash.bytes.data.resize(SHA256_DIGEST_LENGTH);
 
-        return hash;
-    }
+    SHA256(
+        input.data.data(),
+        input.data.size(),
+        hash.bytes.data.data());
+
+    return hash;
+}
 
     /* ------------------------------------------------------
      * Compute Hash from String
      * ------------------------------------------------------*/
 
-    HashValue ComputeHash(const std::string& input)
-    {
-        ByteArray bytes;
+ HashValue ComputeHash(const std::string& input)
+{
+    ByteArray bytes;
 
-        bytes.data.assign(input.begin(), input.end());
+    bytes.data.assign(input.begin(), input.end());
 
-        return ComputeHash(bytes);
-    }
-
+    return ComputeHash(bytes);
+}
     /* ------------------------------------------------------
      * Verify Hash
      * ------------------------------------------------------*/
@@ -99,7 +104,10 @@ public:
     {
         HashValue computed = ComputeHash(input);
 
-        return (computed.bytes.data == expected.bytes.data);
+       return std::memcmp(
+           computed.bytes.data.data(),
+           expected.bytes.data.data(),
+           SHA256_DIGEST_LENGTH) == 0;
     }
 
     /* ------------------------------------------------------

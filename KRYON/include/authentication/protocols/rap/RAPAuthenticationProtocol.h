@@ -9,11 +9,19 @@
  *
  * Description
  * -----------
- * A simple authentication protocol used only for validating
- * the authentication framework architecture.
+* Reference implementation of the RAP authentication protocol.
  *
- * This protocol performs no cryptographic operations and
- * always returns a successful authentication result.
+ * Current implementation performs:
+ * • Random challenge generation
+ * • SHA-256 challenge hashing
+ * • Proof verification
+ * • Four-message authentication exchange
+ *
+ * Future versions will extend this with:
+ * • ECC signatures
+ * • Session key establishment
+ * • Replay protection
+ * • Mutual authentication
  * ----------------------------------------------------------
  */
 
@@ -25,6 +33,9 @@
 #include "../../AuthenticationChallenge.h"
 #include "../../AuthenticationResponse.h"
 #include "ns3/core-module.h"
+#include <random>
+#include <algorithm>
+#include "../../../crypto/CryptoEngine.h"
 
 namespace kryon
 {
@@ -36,17 +47,34 @@ public:
     RAPAuthenticationProtocol() = default;
 
     ~RAPAuthenticationProtocol() override = default;
+	
+	void SetCryptoEngine(CryptoEngine* crypto)
+{
+    m_crypto = crypto;
+}
 
-    void Initialize() override
-    {
-        Logger::Info("RAP  Authentication Protocol initialized.");
-    }
+void Initialize() override
+{
+    Logger::Info("RAP Authentication Protocol initialized.");
+}
 
     AuthenticationResult Authenticate(
     const AuthenticationRequest& request) override
 {
 	double start =
     ns3::Simulator::Now().GetSeconds();
+	
+	if (m_crypto == nullptr)
+{
+    AuthenticationResult result;
+
+    result.requestId = request.requestId;
+    result.authenticated = false;
+    result.status = AuthenticationStatus::FAILED;
+    result.reason = "CryptoEngine not initialized.";
+
+    return result;
+}
 	
     Logger::Info("==========================================");
 Logger::Info("RAP Authentication Started");
@@ -88,6 +116,8 @@ Logger::Info("Message 1 : Authentication Request");
     (end - start) * 1000.0);
 }
 
+
+
     void Finalize() override
     {
         Logger::Info("RAP  Authentication Protocol finalized.");
@@ -95,7 +125,7 @@ Logger::Info("Message 1 : Authentication Request");
 
     std::string GetProtocolName() const override
     {
-        return "RReference Authentication Protocol (RAP)";
+        return "Reference Authentication Protocol (RAP)";
     }
 	
 private:
@@ -106,11 +136,18 @@ private:
 
     AuthenticationChallenge challenge;
 
-    challenge.challengeId = "CH-0001";
+    challenge.requestId = request.requestId;
     challenge.sourceNodeId = request.destinationNodeId;
     challenge.destinationNodeId = request.sourceNodeId;
-    challenge.challenge = 123456;
+	
+  ByteArray nonce =
+    m_crypto->GenerateRandomBytes(32);
+
+challenge.challenge = nonce.data;
     challenge.timestamp = request.timestamp;
+	
+	Logger::Info(
+    "Generated 32-byte authentication challenge.");
 
     return challenge;
 	}
@@ -126,7 +163,16 @@ private:
     response.requestId = request.requestId;
     response.responderNodeId = request.sourceNodeId;
     response.challenge = challenge.challenge;
-    response.proof = "RAP-PROOF";
+ ByteArray message;
+
+message.data = challenge.challenge;
+Logger::Info(
+    "Computing SHA-256 response proof.");
+HashValue proofHash =
+    m_crypto->ComputeHash(message);
+
+response.proof =
+    proofHash.bytes.data;
     response.timestamp = challenge.timestamp;
 
     return response;
@@ -136,11 +182,20 @@ bool VerifyResponse(
 {
     (void)response;
 
-    Logger::Info("Message  4: Response Verification.");
+    Logger::Info(
+    "Verifying SHA-256 proof.");
 	
 	Logger::Info("Authentication Result : SUCCESS");
 
-    return true;
+   ByteArray message;
+
+message.data = response.challenge;
+
+HashValue expected =
+    m_crypto->ComputeHash(message);
+
+return expected.bytes.data ==
+       response.proof;
 }
 AuthenticationResult BuildResult(
     const AuthenticationRequest& request,
@@ -190,8 +245,13 @@ result.reason =
 return result;
 
 }
+private:
+
+    CryptoEngine* m_crypto = nullptr;
+
 	
 };
+
 
 }
 

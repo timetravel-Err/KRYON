@@ -16,8 +16,9 @@
  * to support future authentication mechanisms.
  * ----------------------------------------------------------
  */
-
 #include <string>
+#include <vector>
+#include <cstdint>
 
 #include "AuthenticationTypes.h"
 
@@ -30,12 +31,24 @@ struct AuthenticationResponse
 
     uint32_t responderNodeId = 0;
 
-    uint64_t challenge = 0;
+    /*
+ * Challenge received from verifier.
+ */
+	std::vector<uint8_t> challenge;
 
-    std::string proof;
+    /*
+ * Protocol-specific proof.
+ *
+ * Examples:
+ *   RAP       -> SHA-256 response
+ *   SLAP      -> PUF response
+ *   2PQS      -> PQ signature
+ *   DID       -> Verifiable Presentation
+ */
+	std::vector<uint8_t> proof;
 
     double timestamp = 0.0;
-};
+};	
 }
 
 #endif

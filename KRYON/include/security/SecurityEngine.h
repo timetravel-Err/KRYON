@@ -55,8 +55,9 @@ public:
 
     m_crypto.Initialize();
 
-    //m_context.security.authenticationEnabled = true;
-	m_authentication.Initialize();
+m_authentication.SetCryptoEngine(&m_crypto);
+
+m_authentication.Initialize();
 
     Logger::Info("Security Engine initialized.");
 }
