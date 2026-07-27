@@ -51,6 +51,9 @@ public:
 	void SetCryptoEngine(CryptoEngine* crypto)
 {
     m_crypto = crypto;
+
+    Logger::Info(
+        "RAP received CryptoEngine pointer " );
 }
 
 void Initialize() override
@@ -61,6 +64,9 @@ void Initialize() override
     AuthenticationResult Authenticate(
     const AuthenticationRequest& request) override
 {
+	
+	//Logger::Info( "RAP Crypto pointer = " + std::to_string(reinterpret_cast<uintptr_t>(m_crypto)));
+	
 	double start =
     ns3::Simulator::Now().GetSeconds();
 	

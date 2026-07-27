@@ -39,36 +39,56 @@ public:
     {
     }
 
-   void Initialize()
+void Initialize()
 {
     Logger::Info("Authentication Manager starting...");
 
-switch (m_config.authenticationProtocol)
-{
- case AuthenticationProtocolType::REFERENCE:
+    switch (m_config.authenticationProtocol)
+    {
+    case AuthenticationProtocolType::REFERENCE:
 
-    Logger::Info("Authentication protocol : RAP");
+        Logger::Info("Authentication protocol : RAP");
 
-    m_protocol =
-        std::make_unique<RAPAuthenticationProtocol>();
+        m_protocol =
+            std::make_unique<RAPAuthenticationProtocol>();
 
-    break;
+        break;
 
-default:
+    default:
 
-    Logger::Info(
-        "Requested protocol not implemented. Using RAP.");
+        Logger::Info(
+            "Requested protocol not implemented. Using RAP.");
 
-    m_protocol =
-        std::make_unique<RAPAuthenticationProtocol>();
+        m_protocol =
+            std::make_unique<RAPAuthenticationProtocol>();
 
-    break;
+        break;
+    }
+
+    // --------------------------------------------------
+    // Inject CryptoEngine AFTER protocol is created
+    // --------------------------------------------------
+
+    if (m_crypto != nullptr)
+    {
+        auto* rap =
+            dynamic_cast<RAPAuthenticationProtocol*>(m_protocol.get());
+
+        if (rap)
+        {
+            Logger::Info("Injecting CryptoEngine into RAP");
+
+            rap->SetCryptoEngine(m_crypto);
+        }
+    }
+
+    m_protocol->Initialize();
+
+    Logger::Info("Authentication Manager initialized.");
 }
 
-m_protocol->Initialize();
 
-Logger::Info("Authentication Manager initialized.");
-}
+
     AuthenticationResult Authenticate(
         const AuthenticationRequest& request)
     {
@@ -100,14 +120,27 @@ void Finalize()
 
 void SetCryptoEngine(CryptoEngine* crypto)
 {
+    Logger::Info("AuthenticationManager received CryptoEngine");
+
     m_crypto = crypto;
 
-    if (auto* rap =
-        dynamic_cast<RAPAuthenticationProtocol*>(m_protocol.get()))
+    // If protocol already exists, inject immediately
+
+    if (m_protocol)
     {
-        rap->SetCryptoEngine(crypto);
+        auto* rap =
+            dynamic_cast<RAPAuthenticationProtocol*>(m_protocol.get());
+
+        if (rap)
+        {
+            Logger::Info("Passing CryptoEngine to RAP");
+
+            rap->SetCryptoEngine(crypto);
+        }
     }
 }
+
+
 private:
 
     const ExperimentConfig& m_config;

@@ -48,7 +48,8 @@ public:
 }
 void SetCryptoEngine(CryptoEngine* crypto)
 {
-    m_manager.SetCryptoEngine(crypto);
+   Logger::Info("AuthenticationEngine received CryptoEngine");
+   m_manager.SetCryptoEngine(crypto);
 }
     void Initialize()
     {

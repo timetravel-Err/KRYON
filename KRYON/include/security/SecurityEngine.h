@@ -54,10 +54,12 @@ public:
 {
 
     m_crypto.Initialize();
+	
+	Logger::Info("SecurityEngine: Passing CryptoEngine");
 
-m_authentication.SetCryptoEngine(&m_crypto);
+	m_authentication.SetCryptoEngine(&m_crypto);
 
-m_authentication.Initialize();
+	m_authentication.Initialize();
 
     Logger::Info("Security Engine initialized.");
 }
