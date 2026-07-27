@@ -1,24 +1,25 @@
 # KRYON
-### **KRYON: A Modular Research Framework for Secure UAV-Assisted Intelligent Vehicular Networks using ns-3**
 
-![Version](https://img.shields.io/badge/version-v1.1.0-blue)
+## **KRYON: A Modular Research Framework for Secure UAV-Assisted Intelligent Vehicular Networks using ns-3**
+
+![Version](https://img.shields.io/badge/version-v1.2.0-blue)
 ![ns-3](https://img.shields.io/badge/ns--3-3.41-green)
 ![Language](https://img.shields.io/badge/C++-17-orange)
 ![Status](https://img.shields.io/badge/status-Research%20Framework-success)
 
 ---
 
-## Overview
+# Overview
 
 KRYON is a modular research framework developed on top of **ns-3.41** for evaluating secure communication protocols in **UAV-assisted Intelligent Vehicular Networks (IoAV)**.
 
-Unlike conventional ns-3 simulation scripts, KRYON follows a layered software architecture where networking, security, authentication, cryptography, metrics, and protocol implementations are separated into reusable modules.
+Unlike conventional ns-3 simulation scripts, KRYON follows a layered software architecture where **communication, networking, security, authentication, cryptography, metrics, and protocol implementations** are separated into reusable modules.
 
-The framework is designed to support rapid implementation and evaluation of future authentication, blockchain, trust, post-quantum cryptography, and privacy-preserving protocols without modifying the simulator core.
+The framework is designed to support rapid implementation and evaluation of authentication, blockchain, trust management, post-quantum cryptography, and privacy-preserving protocols without modifying the simulator core.
 
 ---
 
-# Current Features (v1.1.0)
+# Current Features (v1.2.0)
 
 ## Core Framework
 
@@ -30,6 +31,16 @@ The framework is designed to support rapid implementation and evaluation of futu
 
 ---
 
+## Communication Layer
+
+- Communication Engine
+- UDP Server Deployment
+- UDP Client Deployment
+- Application Installation
+- FlowMonitor Integration
+
+---
+
 ## Network Layer
 
 - UAV Mobility
@@ -37,18 +48,18 @@ The framework is designed to support rapid implementation and evaluation of futu
 - IEEE 802.11n Communication
 - IPv4 Networking
 - UDP Traffic Generation
-- FlowMonitor Integration
 
 ---
 
 ## Security Layer
 
 - Security Engine
-- Cryptography Engine
-- Hash Engine
+- Crypto Engine
+- Hash Engine (SHA-256)
 - Random Engine
 - ECC Engine
 - Key Generation Engine
+- Dependency Injection Architecture
 
 ---
 
@@ -56,8 +67,13 @@ The framework is designed to support rapid implementation and evaluation of futu
 
 - Authentication Engine
 - Authentication Manager
-- Plugin-ready Authentication Architecture
+- Plugin-based Authentication Architecture
+- IAuthenticationProtocol Interface
 - RAP Authentication Protocol
+- Runtime CryptoEngine Injection
+- Four-Message Authentication Workflow
+- Random Challenge Generation
+- SHA-256 Challenge Verification
 - Authentication Timing
 - Authentication Statistics
 
@@ -81,78 +97,122 @@ KRYON exports both network and authentication metrics.
 - Messages Exchanged
 - Communication Cost
 - Authentication Success
+- Authentication Failure
+- Authentication Success Rate
 
 ---
 
 # Framework Architecture
 
-```
-Application
-      │
-Communication Engine
-      │
-Security Engine
-      │
-Authentication Engine
-      │
-Authentication Manager
-      │
-Authentication Protocol
-      │
-RAP Authentication Protocol
+```text
+                 Application
+                      │
+            Communication Engine
+                      │
+                Security Engine
+               ┌────────┴────────┐
+               │                 │
+         Crypto Engine   Authentication Engine
+               │                 │
+               │        Authentication Manager
+               │                 │
+               │     IAuthenticationProtocol
+               │                 │
+               └────► RAP Authentication Protocol
+                      │
+                Metrics Engine
 ```
 
 ---
 
 # Project Structure
 
-```
+```text
 KRYON/
-
+│
 ├── docs/
 │   ├── Architecture.md
 │   ├── DeveloperGuide.md
 │   └── PROJECT_STATUS.md
 │
 ├── include/
-│
 │   ├── application/
+│   ├── authentication/
 │   ├── communication/
 │   ├── core/
-│   ├── cryptography/
+│   ├── crypto/
 │   ├── metrics/
 │   ├── mobility/
 │   ├── network/
 │   ├── security/
-│   ├── authentication/
 │   ├── simulation/
 │   └── utils/
 │
-└── scratch/
-    └── kryon/
+├── scratch/
+│   └── kryon/
+│       ├── CMakeLists.txt
+│       └── kryon-simulator.cc
+│
+└── results/
+```
+
+---
+
+# Current RAP Authentication Workflow
+
+The current implementation includes a complete reference authentication workflow consisting of four messages:
+
+1. Authentication Request
+2. Authentication Challenge
+3. Challenge Response
+4. Response Verification
+
+Current cryptographic operations include:
+
+- Random challenge generation
+- SHA-256 challenge hashing
+- SHA-256 proof verification
+- Authentication statistics collection
+
+The RAP implementation serves as the baseline authentication protocol for future comparative evaluation of advanced authentication schemes.
+
+---
+
+# Example Authentication Output
+
+```text
+Protocol            : RAP
+Status              : SUCCESS
+Messages Exchanged  : 4
+Bytes Exchanged     : 904
+Authentication Time : 25.27 ms
+Reason              : RAP authentication successful.
 ```
 
 ---
 
 # Example CSV Output
 
-```
+```csv
 FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throughput,Delay,Jitter,PDR,AuthTimeMs,AuthMessages,AuthBytes,AuthSuccess
 
-1.1.0,2026-07-21 11:36:57,1,60,1,5,10,RAP,43.8994,4.06146,2.46386,0.850101,0.045422,4,904,1
+1.2.0,2026-07-27 10:15:32,1,60,1,5,10,RAP,43.8994,4.06146,2.46386,0.850101,25.2724,4,904,1
 ```
 
 ---
 
 # Build
 
-```
+```bash
+./ns3 configure
 ./ns3 build
 ```
 
-Run
+---
 
-```
+# Run
+
+```bash
 ./ns3 run scratch/kryon/kryon-simulator
 ```
 
@@ -160,7 +220,7 @@ Run
 
 # Example Command Line
 
-```
+```bash
 ./ns3 run "scratch/kryon/kryon-simulator \
 --numRegions=1 \
 --dronesPerRegion=10 \
@@ -173,47 +233,57 @@ Run
 
 # Current Authentication Protocol
 
-Currently implemented
+## Currently Implemented
 
-- RAP Authentication Protocol
+- Reference Authentication Protocol (RAP)
 
-Framework ready for
+## Framework Ready For
 
-- Privacy Preserving Authentication
-- Blockchain Authentication
+- 2PQS-IoAV
+- TC2PA
+- SLAP
 - DID Authentication
-- Zero Knowledge Authentication
+- Verifiable Credential Authentication
+- Blockchain Authentication
+- PUF-based Authentication
+- Zero-Knowledge Authentication
 - Post-Quantum Authentication
 
 ---
 
 # Research Roadmap
 
-## Completed
+## Completed (v1.2.0)
 
 - Modular Framework
+- Communication Engine
 - Security Engine
-- Cryptography Engine
-- Authentication Framework
-- RAP Authentication
+- Crypto Engine
+- Authentication Engine
+- Authentication Manager
+- Plugin-based Authentication Architecture
+- RAP Authentication Protocol
+- SHA-256 Authentication Workflow
+- Runtime CryptoEngine Injection
+- Authentication Statistics
 - Experiment Metrics
 - Research-grade CSV Export
 
----
+## Planned (v1.3)
 
-## Planned (v1.2)
-
-- Multiple Authentication Protocols
+- 2PQS-IoAV Authentication Protocol
+- TC2PA Authentication Protocol
 - Runtime Protocol Selection
 - Trust Engine
 - Blockchain Engine
 - Comparative Benchmarking
+- Multi-Protocol Performance Evaluation
 
 ---
 
 # Publications
 
-This framework is being developed to support research in
+This framework is being developed to support research in:
 
 - UAV-assisted Intelligent Vehicular Networks
 - Secure IoAV
@@ -234,24 +304,22 @@ Developed for research and educational purposes.
 
 # Framework Information
 
-Framework : KRYON
+| Item | Value |
+|------|-------|
+| Framework | KRYON |
+| Version | **v1.2.0** |
+| Simulator | **ns-3.41** |
+| Language | **C++17** |
+| Architecture | Modular Research Framework |
+| Status | Stable |
 
-Version : **v1.1.0**
-
-Simulator : **ns-3.41**
-
-Language : **C++17**
-
-Architecture : Modular Research Framework
-
-Status : Stable
 ---
 
 # Author
 
 **Dr. G. S. Rawat**
 
-**Research Interests**
+## Research Interests
 
 - Blockchain Technologies
 - Network Security

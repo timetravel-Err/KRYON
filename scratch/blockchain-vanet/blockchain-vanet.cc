@@ -25,6 +25,7 @@
 #include "ns3/flow-monitor-module.h"
 #include "ns3/pointer.h"
 #include "ns3/double.h"
+#include <limits>
 
 #include "crypto-utils.h"
 #include "blockchain.h"
@@ -49,6 +50,11 @@ main (int argc, char *argv[])
   bool enableDos = true;
   std::string outDir = "./results";
   uint16_t rsuPort = 9000;
+  uint32_t sybilCount = 30;
+  double sybilIntervalMs = 200.0;
+  double dosIntervalMs = 5.0;
+  uint32_t dosPacketSize = 256;
+  double dosDurationSec = 10.0;
 
   CommandLine cmd;
   cmd.AddValue ("numVehicles", "Number of vehicle nodes", numVehicles);
@@ -59,6 +65,11 @@ main (int argc, char *argv[])
   cmd.AddValue ("enableReplay", "Enable Replay attacker node", enableReplay);
   cmd.AddValue ("enableDos", "Enable DoS flood attacker node", enableDos);
   cmd.AddValue ("outDir", "Directory to write metrics CSV / FlowMonitor XML", outDir);
+  cmd.AddValue ("sybilCount", "Number of fake identities the Sybil attacker sends", sybilCount);
+  cmd.AddValue ("sybilIntervalMs", "Interval between Sybil identity attempts (ms)", sybilIntervalMs);
+  cmd.AddValue ("dosIntervalMs", "Interval between DoS flood packets (ms)", dosIntervalMs);
+  cmd.AddValue ("dosPacketSize", "DoS flood packet size (bytes)", dosPacketSize);
+  cmd.AddValue ("dosDurationSec", "DoS flood duration (s)", dosDurationSec);
   cmd.Parse (argc, argv);
 
   int mkdirRc = system (("mkdir -p " + outDir).c_str ());
@@ -96,16 +107,19 @@ main (int argc, char *argv[])
   allNodes.Add (rsuNodes); allNodes.Add (vehicleNodes);
   allNodes.Add (droneNodes); allNodes.Add (attackerNodes);
 
-  // RSUs: fixed positions spaced along a road (x-axis), y=0.
+  // RSUs: fixed positions spaced along a road (x-axis), y=0. Spacing kept
+  // tight enough (150m) that a vehicle/drone assigned to its nearest RSU
+  // (see nearest-RSU assignment below) stays comfortably within WiFi range.
   MobilityHelper rsuMobility;
   Ptr<ListPositionAllocator> rsuPos = CreateObject<ListPositionAllocator> ();
+  double rsuSpacing = 150.0;
   for (uint32_t i = 0; i < numRsu; ++i)
-    rsuPos->Add (Vector (i * 300.0, 0.0, 10.0)); // RSUs mounted at height 10m
+    rsuPos->Add (Vector (i * rsuSpacing, 0.0, 10.0)); // RSUs mounted at height 10m
   rsuMobility.SetPositionAllocator (rsuPos);
   rsuMobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   rsuMobility.Install (rsuNodes);
 
-  double roadLength = (numRsu - 1) * 300.0 + 100.0;
+  double roadLength = (numRsu - 1) * rsuSpacing + 100.0;
 
   // Vehicles: move along the road (highway-like) using RandomWaypoint
   // within the RSU corridor. Built programmatically (not via nested
@@ -170,14 +184,32 @@ main (int argc, char *argv[])
   attackerMobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   attackerMobility.Install (attackerNodes);
   for (uint32_t i = 0; i < attackerNodes.GetN (); ++i)
-    attackerNodes.Get (i)->GetObject<ConstantPositionMobilityModel> ()->SetPosition (Vector (150.0, 5.0 * i, 0.0));
+    attackerNodes.Get (i)->GetObject<ConstantPositionMobilityModel> ()->SetPosition (Vector (50.0, 5.0 * i, 0.0));
 
   // -------------------------------------------------------------------
   // 3. Wireless network (802.11 ad-hoc standing in for 802.11p/WAVE; swap
   //    WifiStandard below to WIFI_STANDARD_80211p if your ns-3 build has
   //    the 'wave' module compiled in).
   // -------------------------------------------------------------------
-  YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
+  // Deterministic range-based connectivity model: any two nodes within
+  // MaxRange get a full-strength link, beyond it they don't. Chosen over
+  // the (default) stochastic/log-distance path-loss model specifically
+  // because that model has NO randomness/fading margin by default, so
+  // real link viability becomes a razor-thin, hard-to-predict cliff around
+  // whatever TX power / data-rate combination happens to be configured -
+  // exactly what caused earlier drones (spread across a wider Y range and
+  // 30-80m altitude, vs. vehicles at ground level) to fail 100% of the
+  // time despite being only ~10-15m farther from their RSU than vehicles
+  // that succeeded reliably. A fixed, generous MaxRange (comfortably
+  // covering the worst-case nearest-RSU distance for the whole node
+  // population, drones included) makes coverage simple, predictable, and
+  // easy to reason about - state this simplification explicitly in your
+  // methodology section; swapping in a stochastic/fading channel model is
+  // a straightforward extension once the protocol logic itself is solid.
+  YansWifiChannelHelper channel;
+  channel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
+  channel.AddPropagationLoss ("ns3::RangePropagationLossModel",
+                               "MaxRange", DoubleValue (300.0));
   YansWifiPhyHelper phy;
   phy.SetChannel (channel.Create ());
 
@@ -252,10 +284,27 @@ main (int argc, char *argv[])
     }
 
   // -------------------------------------------------------------------
-  // 5. Vehicles / drones: keypair + CA cert + home-RSU assignment
-  //    (assigned round-robin here; swap for nearest-RSU-by-position for a
-  //    more realistic handover-aware v2 model).
+  // 5. Vehicles / drones: keypair + CA cert + home-RSU assignment.
+  //    Assigned by NEAREST RSU (by actual spawn position), not
+  //    round-robin: vehicles/drones spawn randomly across the whole
+  //    corridor, and a round-robin assignment can easily land a node
+  //    hundreds of meters from its "home" RSU - well outside WiFi range -
+  //    causing its AUTH_REQUEST to silently never arrive at the PHY layer.
   // -------------------------------------------------------------------
+  std::vector<Vector> rsuPositions (numRsu);
+  for (uint32_t i = 0; i < numRsu; ++i)
+    rsuPositions[i] = rsuNodes.Get (i)->GetObject<MobilityModel> ()->GetPosition ();
+
+  auto nearestRsu = [&] (Vector pos) {
+    uint32_t best = 0; double bestDist = std::numeric_limits<double>::max ();
+    for (uint32_t j = 0; j < numRsu; ++j)
+      {
+        double d = CalculateDistance (pos, rsuPositions[j]);
+        if (d < bestDist) { bestDist = d; best = j; }
+      }
+    return best;
+  };
+
   std::vector<uint8_t> capturedReplayPacket; // filled in for node 0 (replay victim)
 
   for (uint32_t i = 0; i < numVehicles; ++i)
@@ -263,7 +312,8 @@ main (int argc, char *argv[])
       uint32_t nodeId = 1000 + i;
       CryptoUtils::KeyPair kp = CryptoUtils::GenerateKeyPair ();
       Certificate cert = issueCert (nodeId, "vehicle", kp);
-      uint32_t homeRsu = i % numRsu;
+      Vector pos = vehicleNodes.Get (i)->GetObject<MobilityModel> ()->GetPosition ();
+      uint32_t homeRsu = nearestRsu (pos);
 
       Ptr<MobileNodeApp> app = CreateObject<MobileNodeApp> ();
       app->Setup (nodeId, "vehicle", kp, cert, rsuAddrs[homeRsu], Seconds (1.0));
@@ -294,7 +344,8 @@ main (int argc, char *argv[])
       uint32_t nodeId = 2000 + i;
       CryptoUtils::KeyPair kp = CryptoUtils::GenerateKeyPair ();
       Certificate cert = issueCert (nodeId, "drone", kp);
-      uint32_t homeRsu = i % numRsu;
+      Vector pos = droneNodes.Get (i)->GetObject<MobilityModel> ()->GetPosition ();
+      uint32_t homeRsu = nearestRsu (pos);
 
       Ptr<MobileNodeApp> app = CreateObject<MobileNodeApp> ();
       app->Setup (nodeId, "drone", kp, cert, rsuAddrs[homeRsu], Seconds (1.5));
@@ -309,7 +360,7 @@ main (int argc, char *argv[])
   if (enableSybil)
     {
       Ptr<SybilAttackApp> app = CreateObject<SybilAttackApp> ();
-      app->Setup (rsuAddrs[0], 30, MilliSeconds (200));
+      app->Setup (rsuAddrs[0], sybilCount, MilliSeconds (sybilIntervalMs));
       attackerNodes.Get (0)->AddApplication (app);
       app->SetStartTime (Seconds (5.0));
       app->SetStopTime (Seconds (std::min (simTime, 25.0)));
@@ -325,13 +376,49 @@ main (int argc, char *argv[])
       app->SetStopTime (Seconds (simTime));
     }
 
+  // Late-joining vehicles that attempt authentication specifically DURING
+  // the DoS window (see below, t=30-40s). Since the initial fleet all
+  // authenticates within the first ~1s of a quiet network, comparing their
+  // auth latency against these late-joiners' latency is the meaningful
+  // "under attack vs. baseline" comparison for the paper - without this,
+  // the DoS attack has no legitimate traffic left to actually contend
+  // with by the time it fires, since everyone already authenticated.
+  if (enableDos && simTime > 32.0)
+    {
+      Vector rsu0Pos = rsuNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
+      for (uint32_t k = 0; k < 2; ++k)
+        {
+          uint32_t nodeId = 1900 + k;
+          CryptoUtils::KeyPair kp = CryptoUtils::GenerateKeyPair ();
+          Certificate cert = issueCert (nodeId, "vehicle", kp);
+          Ptr<Node> lateNode = CreateObject<Node> ();
+          allNodes.Add (lateNode); // NOTE: for WiFi/IP setup, see README caveat below
+
+          MobilityHelper lateMobility;
+          lateMobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+          lateMobility.Install (lateNode);
+          lateNode->GetObject<MobilityModel> ()->SetPosition (
+            Vector (rsu0Pos.x + 20.0, rsu0Pos.y + 10.0 * k, 0.0));
+
+          NetDeviceContainer lateDev = wifi.Install (phy, mac, lateNode);
+          internet.Install (lateNode);
+          Ipv4InterfaceContainer lateIf = ipv4.Assign (lateDev);
+
+          Ptr<MobileNodeApp> app = CreateObject<MobileNodeApp> ();
+          app->Setup (nodeId, "vehicle", kp, cert, rsuAddrs[0], Seconds (1.0));
+          lateNode->AddApplication (app);
+          app->SetStartTime (Seconds (31.0)); // 1s into the DoS window
+          app->SetStopTime (Seconds (simTime));
+        }
+    }
+
   if (enableDos)
     {
       Ptr<DosFloodAttackApp> app = CreateObject<DosFloodAttackApp> ();
-      app->Setup (rsuAddrs[0], MilliSeconds (5), 256, Seconds (10.0));
+      app->Setup (rsuAddrs[0], MilliSeconds (dosIntervalMs), dosPacketSize, Seconds (dosDurationSec));
       attackerNodes.Get (2)->AddApplication (app);
       app->SetStartTime (Seconds (30.0));
-      app->SetStopTime (Seconds (std::min (simTime, 40.0)));
+      app->SetStopTime (Seconds (std::min (simTime, 30.0 + dosDurationSec)));
     }
 
   // -------------------------------------------------------------------

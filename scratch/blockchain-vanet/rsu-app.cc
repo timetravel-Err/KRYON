@@ -103,7 +103,9 @@ RsuApp::HandleRead (Ptr<Socket> socket)
         case MsgType::DATA_MSG: HandleDataMsg (buf, from); break;
         default: /* ATTACK_DOS or unknown -> just counted as noise below */
           {
-            CheckRateLimit (from); // still counts toward rate limiter
+            if (!CheckRateLimit (from))
+              MetricsCollector::Get ().LogAttackEvent (Simulator::Now ().GetSeconds (),
+                                                        "DosFlood", 0, "detected");
             break;
           }
         }
@@ -405,8 +407,8 @@ RsuApp::FinalizeCommit (uint64_t blockIndex)
     {
       double consensusLatency = now - ps.proposedAt;
       MetricsCollector::Get ().LogConsensusRound (now, 0, blockIndex, b.proposerRsuId,
-                                                   consensusLatency, ps.commitVotes.size ());
-      MetricsCollector::Get ().LogBlockCommitted (now, b.index, b.transactions.size ());
+                                                   consensusLatency, ps.commitVotes.size (), m_rsuId);
+      MetricsCollector::Get ().LogBlockCommitted (now, b.index, b.transactions.size (), m_rsuId);
 
       for (auto &tx : b.transactions)
         {
@@ -416,7 +418,7 @@ RsuApp::FinalizeCommit (uint64_t blockIndex)
 
           if (ps.isLocalProposer)
             {
-              double authLatency = now; // default if arrival unknown
+              double authLatency = 0.0; // sane fallback if arrival timestamp is missing
               auto ait = m_authRequestArrival.find (tx.nodeId);
               if (ait != m_authRequestArrival.end ()) authLatency = now - ait->second;
               MetricsCollector::Get ().LogAuthResult (now, tx.nodeId, true, authLatency, "ok");
@@ -480,16 +482,48 @@ RsuApp::HandleBlockSync (const std::vector<uint8_t> &buf, const Address &from)
   bool appended = m_blockchain.AppendBlock (msg.block);
   if (!appended) return;
 
-  MetricsCollector::Get ().LogBlockCommitted (now, msg.block.index, msg.block.transactions.size ());
+  MetricsCollector::Get ().LogBlockCommitted (now, msg.block.index, msg.block.transactions.size (), m_rsuId);
   for (auto &tx : msg.block.transactions)
     {
       if (tx.txType != "AUTH") continue;
       m_sessionTokens[tx.nodeId] = m_blockchain.DeriveSessionToken (tx.nodeId, msg.block);
     }
 
-  // If we had our own (now-stale) competing proposal at this index, drop it
-  // and free up this RSU to accept/propose new requests again.
-  AbandonProposal (msg.block.index);
+  // If we had our own (now superseded) proposal at this index, reconcile
+  // it. IMPORTANT: a peer reaching quorum first does not necessarily mean
+  // OUR transaction lost a race - it may be the SAME transaction we
+  // proposed, just finalized on a peer's copy microseconds before our own
+  // local vote count reached quorum. In that case we still owe the
+  // originating vehicle its AUTH_ACCEPT.
+  auto it = m_proposals.find (msg.block.index);
+  if (it != m_proposals.end () && !it->second.finalized)
+    {
+      bool wasLocalProposer = it->second.isLocalProposer;
+      Address vehicleAddr = it->second.vehicleAddr;
+      bool hadTx = !it->second.block.transactions.empty ();
+      Transaction localTx = hadTx ? it->second.block.transactions[0] : Transaction ();
+
+      if (it->second.timeoutEvent.IsRunning ()) Simulator::Cancel (it->second.timeoutEvent);
+      m_proposals.erase (it);
+      if (wasLocalProposer) m_proposalInFlight = false;
+
+      bool sameTransaction = wasLocalProposer && hadTx && !msg.block.transactions.empty ()
+        && localTx.nodeId == msg.block.transactions[0].nodeId
+        && localTx.nonce == msg.block.transactions[0].nonce;
+
+      if (sameTransaction)
+        {
+          double authLatency = 0.0;
+          auto ait = m_authRequestArrival.find (localTx.nodeId);
+          if (ait != m_authRequestArrival.end ()) authLatency = now - ait->second;
+          MetricsCollector::Get ().LogAuthResult (now, localTx.nodeId, true, authLatency, "ok_via_sync");
+          AuthAcceptMsg accept{localTx.nodeId, msg.block.index, msg.block.ComputeHash (), authLatency};
+          SendTo (vehicleAddr, accept.Serialize ());
+        }
+      // else: a genuinely different transaction won the race at this index;
+      // our own vehicle's client will retry AUTH_REQUEST on its own
+      // schedule and succeed at the next available block index.
+    }
 }
 
 void

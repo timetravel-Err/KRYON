@@ -25,11 +25,11 @@ public:
                        double latencySec, const std::string &reason);
 
   // PBFT consensus
-  void LogConsensusRound (double time, uint64_t view, uint64_t seq,
-                           uint32_t primaryId, double latencySec, size_t numCommitVotes);
+  void LogConsensusRound (double time, uint64_t view, uint64_t seq, uint32_t primaryId,
+                           double latencySec, size_t numCommitVotes, uint32_t reportingRsuId);
 
   // Blockchain growth
-  void LogBlockCommitted (double time, uint64_t blockIndex, size_t numTx);
+  void LogBlockCommitted (double time, uint64_t blockIndex, size_t numTx, uint32_t reportingRsuId);
 
   // Data-plane message (post-auth telemetry)
   void LogDataMsg (double time, uint32_t nodeId, bool hmacValid);
@@ -49,8 +49,8 @@ private:
   struct AuthEvent { double time; uint32_t nodeId; std::string nodeType; bool success;
                       double latencySec; std::string reason; };
   struct ConsensusEvent { double time; uint64_t view; uint64_t seq; uint32_t primaryId;
-                           double latencySec; size_t numCommitVotes; };
-  struct BlockEvent { double time; uint64_t blockIndex; size_t numTx; };
+                           double latencySec; size_t numCommitVotes; uint32_t reportingRsuId; };
+  struct BlockEvent { double time; uint64_t blockIndex; size_t numTx; uint32_t reportingRsuId; };
   struct DataEvent { double time; uint32_t nodeId; bool hmacValid; };
   struct AttackEvent { double time; std::string attackType; uint32_t sourceNodeId; std::string outcome; };
 

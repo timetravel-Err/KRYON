@@ -94,6 +94,7 @@ private:
   ns3::Time m_interval;
   uint32_t m_packetSize;
   ns3::Time m_duration;
+  ns3::Time m_stopAt; // absolute simulation-time cutoff, computed at StartApplication
   ns3::EventId m_event;
 };
 

@@ -154,6 +154,7 @@ DosFloodAttackApp::StartApplication ()
 {
   m_socket = Socket::CreateSocket (GetNode (), UdpSocketFactory::GetTypeId ());
   m_socket->Bind ();
+  m_stopAt = Simulator::Now () + m_duration; // absolute cutoff, not the raw duration itself
   m_event = Simulator::Schedule (Seconds (0.0), &DosFloodAttackApp::SendFloodPacket, this);
 }
 
@@ -167,7 +168,7 @@ DosFloodAttackApp::StopApplication ()
 void
 DosFloodAttackApp::SendFloodPacket ()
 {
-  if (Simulator::Now () > m_duration) return;
+  if (Simulator::Now () > m_stopAt) return;
   std::vector<uint8_t> buf (m_packetSize, 0xAA); // garbage payload, no valid message type
   Ptr<Packet> p = Create<Packet> (buf.data (), buf.size ());
   m_socket->SendTo (p, 0, m_target);

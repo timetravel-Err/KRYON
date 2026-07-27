@@ -1,6 +1,7 @@
 #include "mobile-node-app.h"
 #include "messages.h"
 #include "metrics.h"
+#include <iostream>
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 #include "ns3/inet-socket-address.h"

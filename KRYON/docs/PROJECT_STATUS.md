@@ -1,7 +1,7 @@
 # KRYON Project Status
 
 **Project:** KRYON  
-**Framework Version:** v1.1.0  
+**Version:** v1.2.0  
 **Simulator:** ns-3.41  
 **Language:** C++17  
 **Status:** Stable Research Framework
@@ -10,271 +10,159 @@
 
 # Project Vision
 
-KRYON is a modular research framework for evaluating secure communication protocols in UAV-assisted Intelligent Vehicular Networks (IoAV).
-
-The objective is to provide a reusable simulation framework where authentication, cryptography, trust, blockchain, privacy, and networking modules can be independently developed and evaluated without modifying the simulator core.
+KRYON is a modular research framework for developing and evaluating secure communication protocols for **UAV-assisted Intelligent Vehicular Networks (IoAV)**. The framework emphasizes modularity, extensibility, and reproducible experimentation while allowing authentication, cryptography, trust, and blockchain components to evolve independently.
 
 ---
 
-# Current Architecture
+# Current Framework
 
-```
-Application Layer
-        │
-Communication Engine
-        │
-Security Engine
-        │
-Authentication Engine
-        │
-Authentication Manager
-        │
-Authentication Protocol
-```
+## Completed Modules
 
-Supporting Modules
-
+- Core Framework
+- SimulationContext
+- Experiment Configuration
+- Communication Engine
+- Security Engine
+- Crypto Engine
+- Authentication Engine
+- Authentication Manager
+- RAP Authentication Protocol
 - Metrics Engine
-- Cryptography Engine
-- Mobility
-- Communication
-- Network
-- Utilities
+- Research CSV Export
+- Logging Framework
 
 ---
 
-# Current Framework Status
+# Current RAP Implementation
 
-| Module | Status |
-|---------|--------|
-| Core Framework | ✅ Complete |
-| SimulationContext | ✅ Complete |
-| Experiment Configuration | ✅ Complete |
-| Version Management | ✅ Complete |
-| Logging | ✅ Complete |
-| Mobility | ✅ Complete |
-| Communication | ✅ Complete |
-| UDP Applications | ✅ Complete |
-| Metrics Engine | ✅ Complete |
-| Security Engine | ✅ Complete |
-| Cryptography Engine | ✅ Complete |
-| Authentication Engine | ✅ Complete |
-| Authentication Manager | ✅ Complete |
-| RAP Authentication Protocol | ✅ Complete |
-| Research CSV Export | ✅ Complete |
+The current RAP protocol provides a functional baseline authentication workflow featuring:
+
+- Four-message authentication exchange
+- Random challenge generation
+- SHA-256 challenge hashing
+- SHA-256 proof verification
+- Runtime CryptoEngine injection
+- Authentication timing
+- Communication cost measurement
+- Authentication success/failure statistics
+
+**Current communication overhead**
+
+- Authentication Messages: **4**
+- Communication Cost: **904 Bytes**
 
 ---
 
-# Implemented Authentication Protocols
+# Metrics
 
-| Protocol | Status |
-|----------|--------|
-| RAP | ✅ Implemented |
-| Reference Protocol | ✅ Baseline |
-| SLAP-IoAV | Planned |
-| 2PQS-IoAV | Planned |
-| DID Authentication | Planned |
-| Blockchain Authentication | Planned |
-
----
-
-# Network Metrics
-
-Implemented
+## Network Metrics
 
 - Throughput
 - End-to-End Delay
 - Jitter
-- Packet Delivery Ratio
+- Packet Delivery Ratio (PDR)
 
----
+## Authentication Metrics
 
-# Authentication Metrics
-
-Implemented
-
-- Authentication Protocol
 - Authentication Time
+- Authentication Success
+- Authentication Failure
+- Success Rate
 - Messages Exchanged
 - Communication Cost
-- Authentication Success
 
 ---
 
-# CSV Output
-
-Current experiment export contains
-
-- Framework Version
-- Timestamp
-- Run Number
-- Simulation Time
-- Number of Regions
-- Number of UAVs
-- Number of Vehicles
-- Authentication Protocol
-- Throughput
-- Delay
-- Jitter
-- Packet Delivery Ratio
-- Authentication Time
-- Authentication Messages
-- Authentication Bytes
-- Authentication Success
-
----
-
-# Current Repository Structure
-
-```
-KRYON/
-
-docs/
-
-include/
-
-application/
-
-authentication/
-
-communication/
-
-core/
-
-cryptography/
-
-metrics/
-
-mobility/
-
-network/
-
-security/
-
-simulation/
-
-utils/
-
-scratch/
-
-results/
-```
-
----
-
-# Release History
-
-## v0.1.0
-
-Initial modular framework
-
----
-
-## v0.2.0
-
-Security framework
-
----
-
-## v0.3.0
-
-Cryptography framework
-
----
-
-## v0.4.0
-
-Authentication framework
-
----
-
-## v0.5.0
-
-Authentication plugin architecture
-
----
-
-## v1.1.0
-
-Research-ready framework
-
-Major additions
-
-- RAP Authentication Protocol
-- Authentication Manager
-- Authentication timing
-- Authentication statistics
-- ExperimentMetrics
-- Research-grade CSV export
-- Protocol selection framework
-- Version management improvements
-
----
-
-# Roadmap
+# Current Release
 
 ## v1.2.0
 
-Planned
+Major achievements:
 
-- Multiple authentication protocols
-- Runtime protocol selection
-- Trust Engine
-- Trust metrics
-- Comparative authentication experiments
+- Complete RAP authentication framework
+- Stable modular authentication architecture
+- Dependency injection for cryptographic services
+- SHA-256 based authentication workflow
+- Research-grade authentication statistics
+- CSV-based experiment export
 
 ---
 
-## v1.3.0
+# Next Development Phase
 
-Planned
+## Phase 6 — Real Cryptographic Authentication
+
+The next milestone upgrades RAP into a complete authenticated key exchange protocol.
+
+Planned work:
+
+- Real ECC key generation
+- ECDH shared secret establishment
+- HKDF session key derivation
+- ECDSA digital signatures
+- Mutual authentication
+- Secure session management
+- Detailed cryptographic performance metrics
+
+---
+
+# Planned Security Evaluation
+
+After the authenticated key exchange is completed, KRYON will support systematic evaluation against:
+
+- Replay Attack
+- Man-in-the-Middle (MITM)
+- Message Modification
+- Impersonation
+- Sybil Attack
+- Denial-of-Service (DoS)
+- Flooding Attack
+- Node Capture
+- Insider Attack
+
+---
+
+# Long-Term Roadmap
+
+## v1.3
+
+- Real cryptographic RAP
+- Authenticated key exchange
+- Mutual authentication
+
+## v1.4
+
+- Trust Engine
+- Comparative protocol benchmarking
+
+## v1.5
 
 - Blockchain Engine
-- Blockchain metrics
-- Ledger simulation
-- Consensus simulation
+- Blockchain-based authentication
 
----
+## v2.x
 
-## v1.4.0
-
-Planned
-
-- DID Engine
+- DID Authentication
 - Verifiable Credentials
-- OpenID4VCI
-- OpenID4VP
-
----
-
-## v1.5.0
-
-Planned
-
-- Zero Knowledge Authentication
+- Zero-Knowledge Authentication
 - Post-Quantum Authentication
-- Benchmark framework
 
 ---
 
-# Framework Maturity
+# Framework Status
 
-| Area | Status |
-|------|--------|
-| Software Architecture | Stable |
-| Research Framework | Stable |
-| Metrics | Stable |
+| Component | Status |
+|-----------|--------|
+| Architecture | Stable |
+| Communication | Stable |
+| Security | Stable |
 | Authentication | Stable |
-| Extensibility | High |
-| Documentation | Good |
-| Future Protocol Integration | Ready |
+| Metrics | Stable |
+| Documentation | Ongoing |
+| Future Extensions | Ready |
 
 ---
 
-# Overall Status
+# Summary
 
-Current Release
-
-**KRYON v1.1.0**
-
-The framework has transitioned from a simulator implementation into a reusable research framework suitable for evaluating authentication protocols in UAV-assisted Intelligent Vehicular Networks.
+KRYON has reached a stable baseline release (**v1.2.0**) with a complete modular authentication framework and a reference RAP implementation. The immediate focus is to replace the current reference cryptographic operations with a real authenticated key exchange protocol before introducing advanced authentication schemes and comprehensive security attack evaluations.

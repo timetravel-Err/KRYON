@@ -25,17 +25,18 @@ MetricsCollector::LogAuthResult (double time, uint32_t nodeId, bool success,
 
 void
 MetricsCollector::LogConsensusRound (double time, uint64_t view, uint64_t seq,
-                                      uint32_t primaryId, double latencySec, size_t numCommitVotes)
+                                      uint32_t primaryId, double latencySec, size_t numCommitVotes,
+                                      uint32_t reportingRsuId)
 {
   std::lock_guard<std::mutex> lk (m_mutex);
-  m_consensusEvents.push_back ({time, view, seq, primaryId, latencySec, numCommitVotes});
+  m_consensusEvents.push_back ({time, view, seq, primaryId, latencySec, numCommitVotes, reportingRsuId});
 }
 
 void
-MetricsCollector::LogBlockCommitted (double time, uint64_t blockIndex, size_t numTx)
+MetricsCollector::LogBlockCommitted (double time, uint64_t blockIndex, size_t numTx, uint32_t reportingRsuId)
 {
   std::lock_guard<std::mutex> lk (m_mutex);
-  m_blockEvents.push_back ({time, blockIndex, numTx});
+  m_blockEvents.push_back ({time, blockIndex, numTx, reportingRsuId});
 }
 
 void
@@ -67,16 +68,16 @@ MetricsCollector::Flush ()
   }
   {
     std::ofstream f (m_outDir + "/consensus_events.csv");
-    f << "time,view,seq,primaryId,latencySec,numCommitVotes\n";
+    f << "time,view,seq,primaryId,latencySec,numCommitVotes,reportingRsuId\n";
     for (auto &e : m_consensusEvents)
       f << e.time << "," << e.view << "," << e.seq << "," << e.primaryId << ","
-        << e.latencySec << "," << e.numCommitVotes << "\n";
+        << e.latencySec << "," << e.numCommitVotes << "," << e.reportingRsuId << "\n";
   }
   {
     std::ofstream f (m_outDir + "/block_events.csv");
-    f << "time,blockIndex,numTx\n";
+    f << "time,blockIndex,numTx,reportingRsuId\n";
     for (auto &e : m_blockEvents)
-      f << e.time << "," << e.blockIndex << "," << e.numTx << "\n";
+      f << e.time << "," << e.blockIndex << "," << e.numTx << "," << e.reportingRsuId << "\n";
   }
   {
     std::ofstream f (m_outDir + "/data_events.csv");
