@@ -36,6 +36,7 @@
 #include <random>
 #include <algorithm>
 #include "../../../crypto/CryptoEngine.h"
+#include "../../../crypto/CryptoTypes.h"
 
 namespace kryon
 {
@@ -100,14 +101,60 @@ Logger::Info(
 Logger::Info("------------------------------------------");
 Logger::Info("Message 1 : Authentication Request");
 
+Logger::Info(
+    "Generating Drone ECC key pair.");
+
+m_droneKeys =
+    m_crypto->GenerateKeyPair();
+
+Logger::Info(
+    "Generating Vehicle ECC key pair.");
+
+m_vehicleKeys =
+    m_crypto->GenerateKeyPair();
+
     AuthenticationChallenge challenge =
         GenerateChallenge(request);
 
     AuthenticationResponse response =
         GenerateResponse(request, challenge);
+		
+	Logger::Info(
+    "Vehicle deriving ECDH shared secret.");
+
+m_vehicleSecret =
+    m_crypto->DeriveSharedSecret(
+        m_vehicleKeys.privateKey,
+        m_droneKeys.publicKey);
+
+Logger::Info(
+    "Drone deriving ECDH shared secret.");
+
+m_droneSecret =
+    m_crypto->DeriveSharedSecret(
+        m_droneKeys.privateKey,
+        m_vehicleKeys.publicKey);	
 
     bool authenticated =
-        VerifyResponse(response);
+    VerifyResponse(response);
+
+if (authenticated)
+{
+    authenticated =
+        (m_droneSecret.bytes.data ==
+         m_vehicleSecret.bytes.data);
+
+    if (authenticated)
+    {
+        Logger::Info(
+            "ECDH shared secrets match.");
+    }
+    else
+    {
+        Logger::Info(
+            "ECDH shared secrets DO NOT match.");
+    }
+}
 
     Logger::Info("------------------------------------------");
 	Logger::Info("RAP Authentication Completed");
@@ -254,6 +301,12 @@ return result;
 private:
 
     CryptoEngine* m_crypto = nullptr;
+	
+	KeyPair m_droneKeys;
+	KeyPair m_vehicleKeys;
+
+	SharedSecret m_droneSecret;
+	SharedSecret m_vehicleSecret;
 
 	
 };
