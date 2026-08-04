@@ -427,6 +427,13 @@ AuthenticationResult BuildResult(
     AuthenticationStatus::FAILED;
 
 	result.authenticated = authenticated;
+	
+	if (authenticated)
+{
+    result.sessionId = "TEMP";
+    result.sessionKey = m_droneSessionKey;
+    result.sessionLifetime = 600.0;
+}
 
 /*
  * RAP Message Flow

@@ -25,6 +25,8 @@
 #include "AuthenticationResult.h"
 #include "IAuthenticationProtocol.h"
 #include "protocols/rap/RAPAuthenticationProtocol.h"
+#include "SessionManager.h"
+
 namespace kryon
 {
 
@@ -35,13 +37,16 @@ public:
     AuthenticationManager(const ExperimentConfig& config,
                           SimulationContext& context)
         : m_config(config),
-          m_context(context)
+          m_context(context),
+		  m_sessionManager(config, context)
     {
     }
 
 void Initialize()
 {
     Logger::Info("Authentication Manager starting...");
+	
+	m_sessionManager.Initialize();
 
     switch (m_config.authenticationProtocol)
     {
@@ -92,10 +97,48 @@ void Initialize()
     AuthenticationResult Authenticate(
         const AuthenticationRequest& request)
     {
-         if (m_protocol)
+     if (m_protocol)
+{
+    AuthenticationResult result =
+        m_protocol->Authenticate(request);
+
+    if (result.authenticated)
     {
-        return m_protocol->Authenticate(request);
+        Session session;
+
+        session.sessionId =
+            "SESSION-" + request.requestId;
+
+        session.droneId =
+            request.sourceNodeId;
+
+        session.vehicleId =
+            request.destinationNodeId;
+
+        session.sessionKey =
+            result.sessionKey;
+
+        session.creationTime =
+            ns3::Simulator::Now().GetSeconds();
+
+        session.expirationTime =
+            session.creationTime +
+            result.sessionLifetime;
+
+        session.active = true;
+
+        m_sessionManager.CreateSession(session);
+
+        result.sessionId =
+            session.sessionId;
+
+        Logger::Info(
+            "AuthenticationManager stored session : " +
+            session.sessionId);
     }
+
+    return result;
+}
 
     AuthenticationResult result;
 
@@ -110,6 +153,8 @@ void Initialize()
 
 void Finalize()
 {
+	m_sessionManager.Finalize();
+	
     if (m_protocol)
     {
         m_protocol->Finalize();
@@ -140,6 +185,10 @@ void SetCryptoEngine(CryptoEngine* crypto)
     }
 }
 
+	SessionManager& GetSessionManager()
+{
+    return m_sessionManager;
+}
 
 private:
 
@@ -150,6 +199,8 @@ private:
     SimulationContext& m_context;
 
     std::unique_ptr<IAuthenticationProtocol> m_protocol;
+	
+	SessionManager m_sessionManager;
 };
 
 }

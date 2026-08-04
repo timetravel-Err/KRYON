@@ -21,6 +21,7 @@
 #include <string>
 
 #include "AuthenticationTypes.h"
+#include "../crypto/CryptoTypes.h"
 
 namespace kryon
 {
@@ -38,6 +39,24 @@ struct AuthenticationResult
         AuthenticationStatus::NOT_STARTED;
 
     bool authenticated = false;
+	
+	/*
+ * Session established after successful authentication.
+ */
+	/*
+ * Established session identifier.
+ */
+	std::string sessionId;
+
+/*
+ * Session key negotiated during authentication.
+ */
+	SessionKey sessionKey;
+
+/*
+ * Session lifetime (seconds).
+ */
+	double sessionLifetime = 0.0;
 
     uint32_t messagesExchanged = 0;
 
