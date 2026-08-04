@@ -305,9 +305,7 @@ FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throug
 
 ## Framework Ready For
 
-- 2PQS-IoAV
-- TC2PA
-- SLAP
+
 - DID Authentication
 - Verifiable Credentials
 - Blockchain-based Authentication
