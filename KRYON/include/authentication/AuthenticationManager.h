@@ -94,14 +94,25 @@ void Initialize()
 
 
 
-    AuthenticationResult Authenticate(
+  AuthenticationResult Authenticate(
         const AuthenticationRequest& request)
     {
      
-	 Session* existingSession =
+	
+	double currentTime =
+	ns3::Simulator::Now().GetSeconds();
+
+	/*
+	 * Remove expired sessions before searching.
+	 */
+	m_sessionManager.RemoveExpiredSessions(
+		currentTime);
+	
+	Session* existingSession =
     m_sessionManager.FindSession(
-        request.sourceNodeId,
-        request.destinationNodeId);
+    request.sourceNodeId,
+    request.destinationNodeId,
+    ns3::Simulator::Now().GetSeconds());
 
 if (existingSession)
 {

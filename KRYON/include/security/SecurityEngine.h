@@ -34,6 +34,8 @@
 #include "../crypto/CryptoEngine.h"
 
 #include "../authentication/AuthenticationEngine.h"
+#include "SecureChannel.h"
+
 namespace kryon
 {
 
@@ -60,6 +62,11 @@ public:
 	m_authentication.SetCryptoEngine(&m_crypto);
 
 	m_authentication.Initialize();
+	
+	m_secureChannel.SetCryptoEngine(
+    &m_crypto);
+
+	m_secureChannel.Initialize();
 
     Logger::Info("Security Engine initialized.");
 }
@@ -126,6 +133,60 @@ void ExecuteAuthentication(AuthenticationRequest request)
     " with Vehicle " +
     std::to_string(request.destinationNodeId));
     Logger::Info("Authentication workflow executed.");
+	
+	/*
+ * --------------------------------------------------
+ * Demonstration of Secure Channel
+ * --------------------------------------------------
+ */
+
+if (result.authenticated)
+{
+    Session* session =
+        m_authentication
+            .GetAuthenticationManager()
+            .GetSessionManager()
+            .FindSession(
+                request.sourceNodeId,
+                request.destinationNodeId,
+                ns3::Simulator::Now().GetSeconds());
+	Logger::Info(
+    std::string("Session pointer = ") +
+    (session ? "FOUND" : "NULL"));
+    if (session)
+    {
+        ByteArray payload;
+
+        std::string message =
+            "Hello Secure KRYON";
+
+        payload.data.assign(
+            message.begin(),
+            message.end());
+
+        Logger::Info(
+            "Encrypting application payload.");
+
+        SecurePacket packet =
+            m_secureChannel.Encrypt(
+                payload,
+                *session);
+
+        ByteArray recovered =
+            m_secureChannel.Decrypt(
+                packet,
+                *session);
+
+        std::string recoveredMessage(
+            recovered.data.begin(),
+            recovered.data.end());
+
+        Logger::Info(
+            "Recovered Payload : " +
+            recoveredMessage);
+    }
+}
+
 }
 
 void PrintSecurityStatistics()
@@ -164,13 +225,19 @@ void PrintSecurityStatistics()
     Logger::Info("==========================================");
 }
 
-void Finalize()
-{
-    m_authentication.Finalize();
-	m_crypto.Finalize();
+	SecureChannel& GetSecureChannel()
+	{
+		return m_secureChannel;
+	}
 
-    Logger::Info("Security Engine finalized.");
-}
+	void Finalize()
+	{
+		m_authentication.Finalize();
+		m_crypto.Finalize();
+		m_secureChannel.Finalize();
+		Logger::Info("Security Engine finalized.");
+	}
+	
 private:
 
     const ExperimentConfig& m_config;
@@ -179,6 +246,8 @@ private:
 	
 	CryptoEngine m_crypto;
 	AuthenticationEngine m_authentication;
+	SecureChannel m_secureChannel;
+	
 };
 
 }

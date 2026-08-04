@@ -435,21 +435,21 @@ AuthenticationResult BuildResult(
     result.sessionLifetime = 600.0;
 }
 
-/*
- * RAP Message Flow
- * 1. Authentication Request
- * 2. Challenge
- * 3. Challenge Response
- * 4. Verification
- */
+	/*
+	 * RAP Message Flow
+	 * 1. Authentication Request
+	 * 2. Challenge
+	 * 3. Challenge Response
+	 * 4. Verification
+	 */
 	result.messagesExchanged = 4;
 
-/*
- * Current RAP communication overhead
- *
- * Request  : 836 Bytes
- * Response : 68 Bytes
- */
+	/*
+	 * Current RAP communication overhead
+	 *
+	 * Request  : 836 Bytes
+	 * Response : 68 Bytes
+	 */
 	result.bytesExchanged = 904;
 
 	result.authenticationTimeMs = authenticationTimeMs;
@@ -458,6 +458,14 @@ AuthenticationResult BuildResult(
     authenticated ?
     "RAP authentication successful." :
     "RAP authentication failed.";
+		
+		/*
+	 * Session information.
+	 */
+	result.sessionKey =
+		m_droneSessionKey;
+
+	result.sessionLifetime = 3.0;
 
 return result;
 

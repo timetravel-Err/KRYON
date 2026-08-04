@@ -63,43 +63,61 @@ public:
             session.sessionId);
     }
 
-    Session* FindSession(uint32_t droneId,
-                         uint32_t vehicleId)
+    Session* FindSession(
+    uint32_t droneId,
+    uint32_t vehicleId,
+    double currentTime)
+{
+    for (auto& session : m_sessions)
     {
-        for (auto& session : m_sessions)
+        if (!session.active)
         {
-            if (session.active &&
-                session.droneId == droneId &&
-                session.vehicleId == vehicleId)
-            {
-                return &session;
-            }
+            continue;
         }
 
-        return nullptr;
+        if (session.expirationTime <= currentTime)
+        {
+            continue;
+        }
+
+        if (session.droneId == droneId &&
+            session.vehicleId == vehicleId)
+        {
+            return &session;
+        }
     }
 
-    void RemoveExpiredSessions(double currentTime)
-    {
-        m_sessions.erase(
+    return nullptr;
+}
 
-            std::remove_if(
+	  void RemoveExpiredSessions(double currentTime)
+	{
+		auto oldSize = m_sessions.size();
 
-                m_sessions.begin(),
-                m_sessions.end(),
+		m_sessions.erase(
 
-                [currentTime](const Session& session)
-                {
-                    return session.expirationTime <= currentTime;
-                }),
+			std::remove_if(
 
-            m_sessions.end());
-    }
+				m_sessions.begin(),
+				m_sessions.end(),
 
-    uint32_t GetActiveSessionCount() const
-    {
-        return static_cast<uint32_t>(m_sessions.size());
-    }
+				[currentTime](const Session& session)
+				{
+					return session.expirationTime <= currentTime;
+				}),
+
+			m_sessions.end());
+
+		auto removed =
+			oldSize - m_sessions.size();
+
+		if (removed > 0)
+		{
+			Logger::Info(
+				"Expired sessions removed : " +
+				std::to_string(removed));
+		}
+	}
 
 private:
 

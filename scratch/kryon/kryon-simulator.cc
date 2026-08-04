@@ -100,75 +100,53 @@ int main(int argc, char *argv[])
 	
 	security.Initialize();
 	
-	kryon::AuthenticationRequest request;
- 
-	request.requestId = kryon::IdGenerator::NextRequestId();
+	if (context.totalDrones == 0 || context.totalAVs == 0)
+	{
+		kryon::Logger::Info("No drones or vehicles available.");
+		return 0;
+	}
 
-	uint32_t droneIndex = 0;
-uint32_t vehicleIndex = 0;
-
-if (context.totalDrones > 0)
+	for (uint32_t d = 0; d < context.totalDrones; ++d)
 {
-    droneIndex =
-        context.totalDrones - 1;
+    uint32_t droneId =
+        context.drones.Get(d)->GetId();
+
+    kryon::Logger::Info("==================================");
+    kryon::Logger::Info(
+        "Drone " + std::to_string(droneId) +
+        " starting authentication");
+
+    for (uint32_t v = 0; v < context.totalAVs; ++v)
+    {
+        kryon::AuthenticationRequest request;
+
+        request.requestId =
+            kryon::IdGenerator::NextRequestId();
+
+        request.sourceNodeId = droneId;
+
+        request.destinationNodeId =
+            context.avs.Get(v)->GetId();
+
+        request.method =
+            kryon::AuthenticationMethod::NONE;
+
+        request.requiresMutualAuthentication = true;
+
+        request.timestamp =
+            ns3::Simulator::Now().GetSeconds();
+
+        kryon::Logger::Info("------------------------------------------");
+
+        kryon::Logger::Info(
+            "Drone " +
+            std::to_string(droneId) +
+            " authenticating Vehicle " +
+            std::to_string(request.destinationNodeId));
+
+        security.ExecuteAuthentication(request);
+    }
 }
-
-if (context.totalAVs > 0)
-{
-    vehicleIndex =
-        context.totalAVs - 1;
-}
-
-request.sourceNodeId =
-    context.drones.Get(droneIndex)->GetId();
-
-request.destinationNodeId =
-    context.avs.Get(vehicleIndex)->GetId();
-
-	request.method =
-    kryon::AuthenticationMethod::NONE;
-
-	request.requiresMutualAuthentication = true;
-
-	request.timestamp =
-    ns3::Simulator::Now().GetSeconds();
-	
-	security.ExecuteAuthentication(request);
-	
-			/*
-		 * --------------------------------------------------
-		 * Second Authentication
-		 * Demonstrates Session Resumption
-		 * --------------------------------------------------
-		 */
-
-		kryon::AuthenticationRequest secondRequest;
-
-		secondRequest.requestId =
-			kryon::IdGenerator::NextRequestId();
-
-		secondRequest.sourceNodeId =
-			request.sourceNodeId;
-
-		secondRequest.destinationNodeId =
-			request.destinationNodeId;
-
-		secondRequest.method =
-			request.method;
-
-		secondRequest.requiresMutualAuthentication =
-			true;
-
-		secondRequest.timestamp =
-			ns3::Simulator::Now().GetSeconds();
-
-		kryon::Logger::Info(
-			"------------------------------------------");
-
-		kryon::Logger::Info(
-			"Starting Second Authentication");
-
-		security.ExecuteAuthentication(secondRequest);
 	
    /* ---------------- Metrics ---------------- */
 

@@ -151,6 +151,11 @@ Logger::Info("============================================");
 
     Logger::Info("Authentication Engine finalized.");
 	}
+	
+	AuthenticationManager& GetAuthenticationManager()
+	{
+		return m_manager;
+	}
 
 private:
 
