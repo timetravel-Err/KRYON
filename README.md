@@ -1,53 +1,56 @@
 # KRYON
 
-## **KRYON: A Modular Research Framework for Secure UAV-Assisted Intelligent Vehicular Networks using ns-3**
+## A Modular Research Framework for Secure UAV-Assisted Intelligent Vehicular Networks using ns-3
 
 ![Version](https://img.shields.io/badge/version-v1.2.0-blue)
 ![ns-3](https://img.shields.io/badge/ns--3-3.41-green)
-![Language](https://img.shields.io/badge/C++-17-orange)
-![Status](https://img.shields.io/badge/status-Research%20Framework-success)
+![Language](https://img.shields.io/badge/C++17-orange)
+![Platform](https://img.shields.io/badge/Linux-Ubuntu-success)
+![Status](https://img.shields.io/badge/status-Active%20Research-success)
 
 ---
 
 # Overview
 
-KRYON is a modular research framework developed on top of **ns-3.41** for evaluating secure communication protocols in **UAV-assisted Intelligent Vehicular Networks (IoAV)**.
+**KRYON** is a modular research framework built on **ns-3.41** for designing, implementing, and evaluating secure communication protocols in **UAV-assisted Intelligent Vehicular Networks (IoAV)**.
 
-Unlike conventional ns-3 simulation scripts, KRYON follows a layered software architecture where **communication, networking, security, authentication, cryptography, metrics, and protocol implementations** are separated into reusable modules.
+Unlike traditional ns-3 scripts, KRYON follows a layered software architecture where networking, communication, authentication, cryptography, security, mobility, metrics, and protocol implementations are separated into reusable modules.
 
-The framework is designed to support rapid implementation and evaluation of authentication, blockchain, trust management, post-quantum cryptography, and privacy-preserving protocols without modifying the simulator core.
+The framework is intended for researchers who want to rapidly prototype and benchmark authentication, blockchain, trust management, post-quantum cryptography, and privacy-preserving protocols without modifying the ns-3 core.
 
 ---
 
-# Current Features (v1.2.0)
+# Key Features
 
-## Core Framework
+## Modular Framework
 
-- Modular Engine Architecture
-- Shared SimulationContext
-- Centralized Experiment Configuration
-- Version Management
-- Research-oriented Logging
+- Layered software architecture
+- Independent simulation engines
+- Shared `SimulationContext`
+- Centralized experiment configuration
+- Dependency Injection architecture
+- Research-oriented logging
+- CSV-based experiment export
 
 ---
 
 ## Communication Layer
 
 - Communication Engine
-- UDP Server Deployment
-- UDP Client Deployment
-- Application Installation
-- FlowMonitor Integration
+- UDP Server deployment
+- UDP Client deployment
+- FlowMonitor integration
+- Application installation
+- IPv4 networking
 
 ---
 
-## Network Layer
+## Mobility Layer
 
-- UAV Mobility
-- Autonomous Vehicle Mobility
-- IEEE 802.11n Communication
-- IPv4 Networking
-- UDP Traffic Generation
+- UAV mobility
+- Autonomous Vehicle (AV) mobility
+- Region-based deployment
+- IEEE 802.11n wireless communication
 
 ---
 
@@ -55,77 +58,135 @@ The framework is designed to support rapid implementation and evaluation of auth
 
 - Security Engine
 - Crypto Engine
-- Hash Engine (SHA-256)
 - Random Engine
+- SHA-256 Hash Engine
 - ECC Engine
 - Key Generation Engine
-- Dependency Injection Architecture
+- Dependency Injection support
 
 ---
 
-## Authentication Framework
+# Authentication Framework
+
+The authentication framework is fully modular and protocol-independent.
+
+## Components
 
 - Authentication Engine
 - Authentication Manager
-- Plugin-based Authentication Architecture
-- IAuthenticationProtocol Interface
-- RAP Authentication Protocol
-- Runtime CryptoEngine Injection
-- Four-Message Authentication Workflow
-- Random Challenge Generation
-- SHA-256 Challenge Verification
-- Authentication Timing
-- Authentication Statistics
+- Plugin-based protocol architecture
+- `IAuthenticationProtocol` interface
+- Runtime protocol selection
+- Authentication statistics
+- Performance measurement
 
 ---
 
-## Metrics Framework
+# RAP Authentication Protocol
 
-KRYON exports both network and authentication metrics.
+The Reference Authentication Protocol (RAP) is currently implemented as the baseline authentication protocol.
 
-### Network Metrics
+## Current Workflow
 
-- Throughput
-- End-to-End Delay
-- Jitter
-- Packet Delivery Ratio (PDR)
-
-### Authentication Metrics
-
-- Authentication Protocol
-- Authentication Time
-- Messages Exchanged
-- Communication Cost
-- Authentication Success
-- Authentication Failure
-- Authentication Success Rate
+1. Authentication Request
+2. Challenge Generation
+3. Challenge Response
+4. Response Verification
 
 ---
 
-# Framework Architecture
+## Current Security Operations
+
+- Random nonce generation
+- ECC key pair generation
+- Vehicle challenge signing
+- Vehicle signature verification
+- Drone response signing
+- Drone signature verification
+- SHA-256 proof generation
+- SHA-256 proof verification
+- ECDH shared secret establishment
+- HKDF session key derivation
+- Mutual authentication
+- Authentication statistics
+
+---
+
+# RAP Authentication Flow
 
 ```text
-                 Application
-                      │
-            Communication Engine
-                      │
-                Security Engine
-               ┌────────┴────────┐
-               │                 │
-         Crypto Engine   Authentication Engine
-               │                 │
-               │        Authentication Manager
-               │                 │
-               │     IAuthenticationProtocol
-               │                 │
-               └────► RAP Authentication Protocol
-                      │
-                Metrics Engine
+Drone                               Vehicle
+
+  Authentication Request  ---------------------------->
+
+                             Generate Challenge
+                             Generate ECC Key Pair
+                             Sign Challenge
+
+  <--------------------------- Challenge + Signature
+
+Verify Vehicle Signature
+Generate Proof
+Generate ECC Key Pair
+Sign Response
+ECDH Shared Secret
+HKDF Session Key
+
+ Response + Signature ------------------------------->
+
+                             Verify Drone Signature
+                             Verify SHA-256 Proof
+                             ECDH Shared Secret
+                             HKDF Session Key
+
+             Mutual Authentication Established
 ```
 
 ---
 
-# Project Structure
+# Current Framework Architecture
+
+```text
+                   +----------------------+
+                   |     Application      |
+                   +----------+-----------+
+                              |
+                   +----------v-----------+
+                   | Communication Engine |
+                   +----------+-----------+
+                              |
+                   +----------v-----------+
+                   |   Security Engine    |
+                   +----------+-----------+
+                              |
+        +---------------------+----------------------+
+        |                                            |
++-------v--------+                         +----------v-----------+
+|  Crypto Engine |                         | Authentication Engine|
++-------+--------+                         +----------+-----------+
+        |                                            |
+        |                               +------------v------------+
+        |                               | Authentication Manager  |
+        |                               +------------+------------+
+        |                                            |
+        |                               +------------v------------+
+        |                               | IAuthenticationProtocol |
+        |                               +------------+------------+
+        |                                            |
+        +--------------------------------------------+
+                                                     |
+                                       +-------------v-------------+
+                                       | RAP Authentication Protocol|
+                                       +-------------+-------------+
+                                                     |
+                                           +---------v---------+
+                                           |  Metrics Engine   |
+                                           +-------------------+
+```
+
+---
+
+# Current Project Structure
 
 ```text
 KRYON/
@@ -158,23 +219,26 @@ KRYON/
 
 ---
 
-# Current RAP Authentication Workflow
+# Metrics Exported
 
-The current implementation includes a complete reference authentication workflow consisting of four messages:
+## Network Metrics
 
-1. Authentication Request
-2. Authentication Challenge
-3. Challenge Response
-4. Response Verification
+- Throughput
+- End-to-End Delay
+- Packet Delivery Ratio (PDR)
+- Jitter
 
-Current cryptographic operations include:
+---
 
-- Random challenge generation
-- SHA-256 challenge hashing
-- SHA-256 proof verification
-- Authentication statistics collection
+## Authentication Metrics
 
-The RAP implementation serves as the baseline authentication protocol for future comparative evaluation of advanced authentication schemes.
+- Protocol Name
+- Authentication Time
+- Messages Exchanged
+- Communication Cost
+- Authentication Success
+- Authentication Failure
+- Success Rate
 
 ---
 
@@ -185,7 +249,7 @@ Protocol            : RAP
 Status              : SUCCESS
 Messages Exchanged  : 4
 Bytes Exchanged     : 904
-Authentication Time : 25.27 ms
+Authentication Time : 9.54 ms
 Reason              : RAP authentication successful.
 ```
 
@@ -196,12 +260,12 @@ Reason              : RAP authentication successful.
 ```csv
 FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throughput,Delay,Jitter,PDR,AuthTimeMs,AuthMessages,AuthBytes,AuthSuccess
 
-1.2.0,2026-07-27 10:15:32,1,60,1,5,10,RAP,43.8994,4.06146,2.46386,0.850101,25.2724,4,904,1
+1.2.0,2026-08-04,1,60,1,5,10,RAP,43.89,4.06,2.46,0.85,9.54,4,904,1
 ```
 
 ---
 
-# Build
+# Building
 
 ```bash
 ./ns3 configure
@@ -210,7 +274,7 @@ FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throug
 
 ---
 
-# Run
+# Running
 
 ```bash
 ./ns3 run scratch/kryon/kryon-simulator
@@ -218,7 +282,7 @@ FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throug
 
 ---
 
-# Example Command Line
+# Example Execution
 
 ```bash
 ./ns3 run "scratch/kryon/kryon-simulator \
@@ -231,11 +295,13 @@ FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throug
 
 ---
 
-# Current Authentication Protocol
+# Supported Authentication Protocols
 
 ## Currently Implemented
 
 - Reference Authentication Protocol (RAP)
+
+---
 
 ## Framework Ready For
 
@@ -243,8 +309,8 @@ FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throug
 - TC2PA
 - SLAP
 - DID Authentication
-- Verifiable Credential Authentication
-- Blockchain Authentication
+- Verifiable Credentials
+- Blockchain-based Authentication
 - PUF-based Authentication
 - Zero-Knowledge Authentication
 - Post-Quantum Authentication
@@ -255,50 +321,51 @@ FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throug
 
 ## Completed (v1.2.0)
 
-- Modular Framework
+- Modular framework architecture
 - Communication Engine
 - Security Engine
 - Crypto Engine
 - Authentication Engine
 - Authentication Manager
-- Plugin-based Authentication Architecture
+- Plugin architecture
 - RAP Authentication Protocol
-- SHA-256 Authentication Workflow
-- Runtime CryptoEngine Injection
-- Authentication Statistics
-- Experiment Metrics
-- Research-grade CSV Export
+- ECC Digital Signatures
+- ECDH Shared Secret
+- HKDF Session Key Derivation
+- Mutual Authentication
+- Runtime dependency injection
+- Authentication statistics
+- CSV experiment export
+
+---
 
 ## Planned (v1.3)
 
-- 2PQS-IoAV Authentication Protocol
-- TC2PA Authentication Protocol
-- Runtime Protocol Selection
+- Runtime protocol selection
+- 2PQS-IoAV implementation
+- TC2PA implementation
 - Trust Engine
 - Blockchain Engine
-- Comparative Benchmarking
-- Multi-Protocol Performance Evaluation
+- Reputation Framework
+- Multi-protocol benchmarking
+- Comparative authentication evaluation
+- Post-Quantum cryptography support
 
 ---
 
-# Publications
+# Research Applications
 
-This framework is being developed to support research in:
+KRYON is intended to support research in:
 
 - UAV-assisted Intelligent Vehicular Networks
+- Intelligent Transportation Systems (ITS)
 - Secure IoAV
 - Authentication Protocol Evaluation
+- Blockchain-enabled VANETs
 - Trust Management
-- Blockchain-enabled Vehicular Networks
+- Privacy Preservation
 - Post-Quantum Security
-
----
-
-# License
-
-Academic Research Framework
-
-Developed for research and educational purposes.
+- Secure V2X Communication
 
 ---
 
@@ -307,11 +374,12 @@ Developed for research and educational purposes.
 | Item | Value |
 |------|-------|
 | Framework | KRYON |
-| Version | **v1.2.0** |
-| Simulator | **ns-3.41** |
-| Language | **C++17** |
+| Version | v1.2.0 |
+| Simulator | ns-3.41 |
+| Language | C++17 |
 | Architecture | Modular Research Framework |
-| Status | Stable |
+| Current Protocol | RAP |
+| Status | Active Research |
 
 ---
 
@@ -319,22 +387,30 @@ Developed for research and educational purposes.
 
 **Dr. G. S. Rawat**
 
-## Research Interests
+### Research Interests
 
 - Blockchain Technologies
 - Network Security
 - Vehicular Networks (VANET / IoAV)
 - UAV-assisted Intelligent Transportation Systems
+- Privacy-Preserving Authentication
+- Post-Quantum Cryptography
 
 ---
 
 # Acknowledgements
 
-This project was developed with the assistance of modern AI tools to support software engineering, documentation, debugging, framework design, and technical review.
+KRYON was developed with the assistance of modern AI tools to accelerate software engineering, framework design, debugging, documentation, and research prototyping.
 
 The author gratefully acknowledges:
 
-- **OpenAI ChatGPT** — architecture discussions, software engineering guidance, documentation, debugging, and framework design.
+- **OpenAI ChatGPT** — architecture discussions, software engineering guidance, implementation support, documentation, debugging, and framework design.
 - **Anthropic Claude** — implementation discussions, documentation refinement, and software engineering support.
 
 These AI assistants served as development aids throughout the project. All architectural decisions, implementation choices, validation, testing, and final integration remain the responsibility of the author.
+
+---
+
+## Citation
+
+If you use KRYON in your research, please cite the associated publication(s) or acknowledge the framework appropriately.
