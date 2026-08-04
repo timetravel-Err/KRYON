@@ -97,7 +97,51 @@ void Initialize()
     AuthenticationResult Authenticate(
         const AuthenticationRequest& request)
     {
-     if (m_protocol)
+     
+	 Session* existingSession =
+    m_sessionManager.FindSession(
+        request.sourceNodeId,
+        request.destinationNodeId);
+
+if (existingSession)
+{
+    Logger::Info(
+        "Existing session found : " +
+        existingSession->sessionId);
+
+    AuthenticationResult result;
+
+    result.requestId = request.requestId;
+    result.protocolName = "SESSION-RESUMPTION";
+    result.method = request.method;
+
+    result.status =
+        AuthenticationStatus::SUCCESS;
+
+    result.authenticated = true;
+
+    result.sessionId =
+        existingSession->sessionId;
+
+    result.sessionKey =
+        existingSession->sessionKey;
+
+    result.sessionLifetime =
+        existingSession->expirationTime -
+        existingSession->creationTime;
+
+    result.messagesExchanged = 0;
+    result.bytesExchanged = 0;
+    result.authenticationTimeMs = 0.0;
+
+    result.reason =
+        "Existing authenticated session reused.";
+
+    return result;
+}
+	 
+	 
+	 if (m_protocol)
 {
     AuthenticationResult result =
         m_protocol->Authenticate(request);

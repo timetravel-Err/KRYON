@@ -135,6 +135,41 @@ request.destinationNodeId =
 	
 	security.ExecuteAuthentication(request);
 	
+			/*
+		 * --------------------------------------------------
+		 * Second Authentication
+		 * Demonstrates Session Resumption
+		 * --------------------------------------------------
+		 */
+
+		kryon::AuthenticationRequest secondRequest;
+
+		secondRequest.requestId =
+			kryon::IdGenerator::NextRequestId();
+
+		secondRequest.sourceNodeId =
+			request.sourceNodeId;
+
+		secondRequest.destinationNodeId =
+			request.destinationNodeId;
+
+		secondRequest.method =
+			request.method;
+
+		secondRequest.requiresMutualAuthentication =
+			true;
+
+		secondRequest.timestamp =
+			ns3::Simulator::Now().GetSeconds();
+
+		kryon::Logger::Info(
+			"------------------------------------------");
+
+		kryon::Logger::Info(
+			"Starting Second Authentication");
+
+		security.ExecuteAuthentication(secondRequest);
+	
    /* ---------------- Metrics ---------------- */
 
 	kryon::MetricsEngine metrics(config, context);
