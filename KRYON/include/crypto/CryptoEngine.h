@@ -124,6 +124,12 @@ public:
     {
         return m_ecc.DeriveSharedSecret(privateKey, publicKey);
     }
+	
+	SessionKey DeriveSessionKey(
+    const SharedSecret& secret)
+{
+    return m_ecc.DeriveSessionKey(secret);
+}
 
     /* ------------------------------------------------------
      * Finalize

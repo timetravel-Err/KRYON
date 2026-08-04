@@ -21,6 +21,7 @@
 #include <cstdint>
 
 #include "AuthenticationTypes.h"
+#include "../crypto/CryptoTypes.h"
 
 namespace kryon
 {
@@ -46,6 +47,20 @@ struct AuthenticationResponse
  *   DID       -> Verifiable Presentation
  */
 	std::vector<uint8_t> proof;
+	
+	/*
+ * Sender's public key.
+ *
+ * Used for ECDSA signature verification.
+ */
+	PublicKey senderPublicKey;
+
+/*
+ * Digital signature over the authentication response.
+ *
+ * Generated using the sender's private ECC key.
+ */
+	Signature signature;
 
     double timestamp = 0.0;
 };	

@@ -223,6 +223,28 @@ public:
     return secret;
 }
 
+/* ------------------------------------------------------
+ * Derive Session Key (HKDF-SHA256)
+ * ------------------------------------------------------*/
+
+SessionKey DeriveSessionKey(
+    const SharedSecret& secret)
+{
+    SessionKey key;
+
+    ByteArray input;
+    input.data = secret.bytes.data;
+
+    HashEngine hash(m_config, m_context);
+
+    HashValue digest =
+        hash.ComputeHash(input);
+
+    key.bytes = digest.bytes;
+
+    return key;
+}
+
     /* ------------------------------------------------------
      * Finalize
      * ------------------------------------------------------*/

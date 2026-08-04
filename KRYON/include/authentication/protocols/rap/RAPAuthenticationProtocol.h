@@ -119,6 +119,8 @@ m_vehicleKeys =
     AuthenticationResponse response =
         GenerateResponse(request, challenge);
 		
+	VerifyResponse(response);	
+		
 	Logger::Info(
     "Vehicle deriving ECDH shared secret.");
 
@@ -134,28 +136,78 @@ m_droneSecret =
     m_crypto->DeriveSharedSecret(
         m_droneKeys.privateKey,
         m_vehicleKeys.publicKey);	
+   
+    Logger::Info(
+    "Vehicle deriving HKDF session key.");
 
-    bool authenticated =
-    VerifyResponse(response);
+m_vehicleSessionKey =
+    m_crypto->DeriveSessionKey(
+        m_vehicleSecret);
+
+Logger::Info(
+    "Drone deriving HKDF session key.");
+
+m_droneSessionKey =
+    m_crypto->DeriveSessionKey(
+        m_droneSecret);
+    
+	
+	bool sharedSecretMatch =
+    (m_droneSecret.bytes.data ==
+     m_vehicleSecret.bytes.data);
+
+if (sharedSecretMatch)
+{
+    Logger::Info(
+        "ECDH shared secrets match.");
+}
+else
+{
+    Logger::Info(
+        "ECDH shared secrets DO NOT match.");
+}
+
+bool sessionKeyMatch =
+    (m_droneSessionKey.bytes.data ==
+     m_vehicleSessionKey.bytes.data);
+
+if (sessionKeyMatch)
+{
+    Logger::Info(
+        "HKDF session keys match.");
+
+    Logger::Info(
+        "Session Key Length : " +
+        std::to_string(
+            m_droneSessionKey.bytes.data.size()) +
+        " bytes");
+}
+else
+{
+    Logger::Info(
+        "HKDF session keys DO NOT match.");
+}
+
+/*
+ * Final authentication decision.
+ */
+bool authenticated =
+    m_vehicleAuthenticated &&
+    m_droneAuthenticated &&
+    m_proofVerified &&
+    sharedSecretMatch &&
+    sessionKeyMatch;
 
 if (authenticated)
 {
-    authenticated =
-        (m_droneSecret.bytes.data ==
-         m_vehicleSecret.bytes.data);
-
-    if (authenticated)
-    {
-        Logger::Info(
-            "ECDH shared secrets match.");
-    }
-    else
-    {
-        Logger::Info(
-            "ECDH shared secrets DO NOT match.");
-    }
+    Logger::Info(
+        "Mutual authentication established.");
 }
-
+else
+{
+    Logger::Info(
+        "Mutual authentication FAILED.");
+}
     Logger::Info("------------------------------------------");
 	Logger::Info("RAP Authentication Completed");
 	Logger::Info("==========================================");
@@ -182,6 +234,7 @@ if (authenticated)
     }
 	
 private:
+
 	AuthenticationChallenge GenerateChallenge(
     const AuthenticationRequest& request)
 	{
@@ -202,10 +255,35 @@ challenge.challenge = nonce.data;
 	Logger::Info(
     "Generated 32-byte authentication challenge.");
 
+/*
+ * Attach Vehicle public key.
+ */
+challenge.senderPublicKey =
+    m_vehicleKeys.publicKey;
+
+/*
+ * Sign challenge using Vehicle private key.
+ */
+ByteArray challengeBytes;
+challengeBytes.data = challenge.challenge;
+
+challenge.signature =
+    m_crypto->Sign(
+        challengeBytes,
+        m_vehicleKeys.privateKey);
+
+Logger::Info(
+    "Vehicle signed authentication challenge.");
+
+
+
     return challenge;
 	}
 	
-	AuthenticationResponse GenerateResponse(
+	
+/*GenerateResponse*/
+	
+AuthenticationResponse GenerateResponse(
     const AuthenticationRequest& request,
     const AuthenticationChallenge& challenge)
 {
@@ -216,6 +294,29 @@ challenge.challenge = nonce.data;
     response.requestId = request.requestId;
     response.responderNodeId = request.sourceNodeId;
     response.challenge = challenge.challenge;
+	
+	Logger::Info(
+    "Verifying Vehicle signature.");
+
+ByteArray challengeBytes;
+challengeBytes.data = challenge.challenge;
+
+m_vehicleAuthenticated =
+    m_crypto->Verify(
+        challengeBytes,
+        challenge.signature,
+        challenge.senderPublicKey);
+
+if (!m_vehicleAuthenticated)
+{
+    Logger::Info(
+        "Vehicle signature verification FAILED.");
+}
+else
+{
+    Logger::Info(
+        "Vehicle successfully authenticated.");
+}
  ByteArray message;
 
 message.data = challenge.challenge;
@@ -226,10 +327,29 @@ HashValue proofHash =
 
 response.proof =
     proofHash.bytes.data;
+	
+	/*
+ * Attach Drone public key.
+ */
+response.senderPublicKey =
+    m_droneKeys.publicKey;
+
+/*
+ * Drone signs the challenge response.
+ */
+response.signature =
+    m_crypto->Sign(
+        challengeBytes,
+        m_droneKeys.privateKey);
+
+Logger::Info(
+    "Drone signed authentication response.");
     response.timestamp = challenge.timestamp;
 
     return response;
 }
+
+
 bool VerifyResponse(
     const AuthenticationResponse& response)
 {
@@ -244,12 +364,50 @@ bool VerifyResponse(
 
 message.data = response.challenge;
 
+Logger::Info(
+    "Verifying Drone signature.");
+
+m_droneAuthenticated =
+    m_crypto->Verify(
+        message,
+        response.signature,
+        response.senderPublicKey);
+
+if (!m_droneAuthenticated)
+{
+    Logger::Info(
+        "Drone signature verification FAILED.");
+
+    return false;
+}
+
+Logger::Info(
+    "Drone successfully authenticated.");
+
 HashValue expected =
     m_crypto->ComputeHash(message);
 
-return expected.bytes.data ==
-       response.proof;
+
+m_proofVerified =
+    (expected.bytes.data == response.proof);
+
+if (m_proofVerified)
+{
+    Logger::Info(
+        "Challenge proof verified.");
 }
+else
+{
+    Logger::Info(
+        "Challenge proof verification FAILED.");
+}
+
+return m_proofVerified;
+}
+
+
+
+
 AuthenticationResult BuildResult(
     const AuthenticationRequest& request,
     bool authenticated,
@@ -257,18 +415,18 @@ AuthenticationResult BuildResult(
 {
    AuthenticationResult result;
 
-result.requestId = request.requestId;
+	result.requestId = request.requestId;
 
-result.protocolName = "RAP";
+	result.protocolName = "RAP";
 
-result.method = request.method;
+	result.method = request.method;
 
-result.status =
+	result.status =
     authenticated ?
     AuthenticationStatus::SUCCESS :
     AuthenticationStatus::FAILED;
 
-result.authenticated = authenticated;
+	result.authenticated = authenticated;
 
 /*
  * RAP Message Flow
@@ -277,7 +435,7 @@ result.authenticated = authenticated;
  * 3. Challenge Response
  * 4. Verification
  */
-result.messagesExchanged = 4;
+	result.messagesExchanged = 4;
 
 /*
  * Current RAP communication overhead
@@ -285,12 +443,11 @@ result.messagesExchanged = 4;
  * Request  : 836 Bytes
  * Response : 68 Bytes
  */
-result.bytesExchanged = 904;
+	result.bytesExchanged = 904;
 
-result.authenticationTimeMs =
-    authenticationTimeMs;
+	result.authenticationTimeMs = authenticationTimeMs;
 
-result.reason =
+	result.reason =
     authenticated ?
     "RAP authentication successful." :
     "RAP authentication failed.";
@@ -307,7 +464,11 @@ private:
 
 	SharedSecret m_droneSecret;
 	SharedSecret m_vehicleSecret;
-
+	SessionKey m_droneSessionKey;
+	SessionKey m_vehicleSessionKey;
+    bool m_vehicleAuthenticated = false;
+	bool m_droneAuthenticated = false;
+	bool m_proofVerified = false;
 	
 };
 
