@@ -2,7 +2,7 @@
 
 ## A Modular Research Framework for Secure UAV-Assisted Intelligent Vehicular Networks using ns-3
 
-![Version](https://img.shields.io/badge/version-v1.2.0-blue)
+![Version](https://img.shields.io/badge/version-v1.3.0--dev-blue)
 ![ns-3](https://img.shields.io/badge/ns--3-3.41-green)
 ![Language](https://img.shields.io/badge/C++17-orange)
 ![Platform](https://img.shields.io/badge/Linux-Ubuntu-success)
@@ -68,15 +68,24 @@ The framework is intended for researchers who want to rapidly prototype and benc
 
 # Authentication Framework
 
-The authentication framework is fully modular and protocol-independent.
+The authentication framework is fully modular, protocol-independent, and event-driven.
 
-## Components
+Authentication protocols are implemented as independent plugins while packet creation,
+transport, scheduling, cryptographic operations, and session management remain reusable
+framework components.
+
+## Core Components
 
 - Authentication Engine
 - Authentication Manager
+- Authentication Scheduler
+- Authentication Packet Builder
+- Authentication Transport Layer
+- Authentication Receiver
 - Plugin-based protocol architecture
 - `IAuthenticationProtocol` interface
 - Runtime protocol selection
+- Session Manager
 - Authentication statistics
 - Performance measurement
 
@@ -88,15 +97,24 @@ The Reference Authentication Protocol (RAP) is currently implemented as the base
 
 ## Current Workflow
 
-1. Authentication Request
-2. Challenge Generation
-3. Challenge Response
-4. Response Verification
+1. Authentication Request Scheduling
+2. Authentication Packet Creation
+3. Authentication Packet Transport
+4. Challenge Generation
+5. Challenge Response
+6. Mutual Authentication
+7. Session Establishment
+8. Secure Channel Creation
 
 ---
 
 ## Current Security Operations
 
+- Authentication Scheduler
+- Packet-based authentication workflow
+- Authentication packet builder
+- Authentication transport layer
+- Authentication receiver callbacks
 - Random nonce generation
 - ECC key pair generation
 - Vehicle challenge signing
@@ -107,9 +125,9 @@ The Reference Authentication Protocol (RAP) is currently implemented as the base
 - SHA-256 proof verification
 - ECDH shared secret establishment
 - HKDF session key derivation
+- Secure session creation
 - Mutual authentication
 - Authentication statistics
-
 ---
 
 # RAP Authentication Flow
@@ -147,43 +165,66 @@ HKDF Session Key
 # Current Framework Architecture
 
 ```text
-                   +----------------------+
-                   |     Application      |
-                   +----------+-----------+
-                              |
-                   +----------v-----------+
-                   | Communication Engine |
-                   +----------+-----------+
-                              |
-                   +----------v-----------+
-                   |   Security Engine    |
-                   +----------+-----------+
-                              |
-        +---------------------+----------------------+
-        |                                            |
-+-------v--------+                         +----------v-----------+
-|  Crypto Engine |                         | Authentication Engine|
-+-------+--------+                         +----------+-----------+
-        |                                            |
-        |                               +------------v------------+
-        |                               | Authentication Manager  |
-        |                               +------------+------------+
-        |                                            |
-        |                               +------------v------------+
-        |                               | IAuthenticationProtocol |
-        |                               +------------+------------+
-        |                                            |
-        +--------------------------------------------+
-                                                     |
-                                       +-------------v-------------+
-                                       | RAP Authentication Protocol|
-                                       +-------------+-------------+
-                                                     |
-                                           +---------v---------+
-                                           |  Metrics Engine   |
-                                           +-------------------+
+                         +----------------------+
+                         |     Application      |
+                         +----------+-----------+
+                                    |
+                         +----------v-----------+
+                         | Communication Engine |
+                         +----------+-----------+
+                                    |
+                         +----------v-----------+
+                         |   Security Engine    |
+                         +----------+-----------+
+                                    |
+                +-------------------+-------------------+
+                |                                       |
+      +---------v---------+                  +----------v-----------+
+      |   Crypto Engine   |                  | Authentication Engine|
+      +---------+---------+                  +----------+-----------+
+                |                                       |
+                |                            +----------v-----------+
+                |                            | AuthenticationManager|
+                |                            +----------+-----------+
+                |                                       |
+                |                            +----------v-----------+
+                |                            | AuthenticationScheduler
+                |                            +----------+-----------+
+                |                                       |
+                |                            +----------v-----------+
+                |                            | Packet Builder       |
+                |                            +----------+-----------+
+                |                                       |
+                |                            +----------v-----------+
+                |                            | AuthenticationTransport
+                |                            +----------+-----------+
+                |                                       |
+                |                            +----------v-----------+
+                |                            | AuthenticationReceiver
+                |                            +----------+-----------+
+                |                                       |
+                |                            +----------v-----------+
+                |                            | IAuthenticationProtocol
+                |                            +----------+-----------+
+                |                                       |
+                +---------------------------------------+
+                                                        |
+                                         +--------------v--------------+
+                                         | RAP Authentication Protocol |
+                                         +--------------+--------------+
+                                                        |
+                                             +----------v----------+
+                                             |   Session Manager   |
+                                             +----------+----------+
+                                                        |
+                                             +----------v----------+
+                                             |   Secure Channel    |
+                                             +----------+----------+
+                                                        |
+                                             +----------v----------+
+                                             |   Metrics Engine    |
+                                             +---------------------+
 ```
-
 ---
 
 # Current Project Structure
@@ -199,6 +240,13 @@ KRYON/
 ├── include/
 │   ├── application/
 │   ├── authentication/
+│   │   ├── network/
+│   │   ├── packets/
+│   │   ├── protocols/
+│   │   ├── AuthenticationScheduler.h
+│   │   ├── AuthenticationPacketBuilder.h
+│   │   ├── AuthenticationReceiver.h
+│   │   └── ...
 │   ├── communication/
 │   ├── core/
 │   ├── crypto/
@@ -217,6 +265,62 @@ KRYON/
 └── results/
 ```
 
+# Authentication Packet Framework
+
+KRYON now uses reusable authentication packet abstractions that are independent of any
+specific authentication protocol.
+
+## Packet Types
+
+- AuthenticationPacket
+- AuthRequestPacket
+- AuthChallengePacket
+- AuthResponsePacket
+- AuthConfirmPacket
+
+## Packet Builder
+
+The `AuthenticationPacketBuilder` converts framework authentication objects into
+network packets exchanged during protocol execution.
+
+This allows future authentication protocols (RAP, SLAP-IoAV, TC2PA, DID, PQC, etc.)
+to reuse the same transport layer without changing the scheduler or communication
+infrastructure.
+
+## Authentication Scheduler
+
+The scheduler manages authentication jobs asynchronously.
+
+Each authentication job progresses through the following finite-state workflow:
+
+1. Authentication Request
+2. Challenge
+3. Challenge Response
+4. Execute Authentication
+5. Session Established
+
+Scheduler statistics include:
+
+- Jobs Scheduled
+- Jobs Completed
+- Maximum Queue Size
+
+## Authentication Transport
+
+The transport layer provides an abstraction for packet transmission.
+
+Current implementation:
+
+- Event-based packet scheduling
+- Simulated network delay
+- Callback-based packet delivery
+
+Future versions will support:
+
+- UDP sockets
+- Wireless propagation delay
+- Packet loss
+- Multi-hop forwarding
 ---
 
 # Metrics Exported
@@ -317,7 +421,7 @@ FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throug
 
 # Research Roadmap
 
-## Completed (v1.2.0)
+## Completed (v1.3.0-dev)
 
 - Modular framework architecture
 - Communication Engine
@@ -325,30 +429,38 @@ FrameworkVersion,Timestamp,Run,SimulationTime,Regions,Drones,AVs,Protocol,Throug
 - Crypto Engine
 - Authentication Engine
 - Authentication Manager
+- Authentication Scheduler
+- Authentication Packet Builder
+- Authentication Transport Layer
+- Authentication Receiver
+- Packet abstraction framework
 - Plugin architecture
 - RAP Authentication Protocol
 - ECC Digital Signatures
+- SHA-256 Integrity Verification
 - ECDH Shared Secret
 - HKDF Session Key Derivation
-- Mutual Authentication
+- Secure Channel
+- Session Manager
 - Runtime dependency injection
 - Authentication statistics
 - CSV experiment export
-
 ---
 
 ## Planned (v1.3)
 
+- Authentication Dispatcher
+- Event-driven authentication pipeline
 - Runtime protocol selection
-- 2PQS-IoAV implementation
-- TC2PA implementation
+- DID Authentication
 - Trust Engine
 - Blockchain Engine
 - Reputation Framework
 - Multi-protocol benchmarking
+- Packet loss simulation
+- Wireless authentication latency modelling
 - Comparative authentication evaluation
 - Post-Quantum cryptography support
-
 ---
 
 # Research Applications
