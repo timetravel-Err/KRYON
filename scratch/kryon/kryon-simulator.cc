@@ -169,31 +169,35 @@ int main(int argc, char *argv[])
 			}
 }
 	
-   /* ---------------- Metrics ---------------- */
+		/* ---------------- Metrics ---------------- */
 
-	kryon::MetricsEngine metrics(config, context);
+		kryon::MetricsEngine metrics(config, context);
 
-	metrics.Initialize();
+		metrics.Initialize();
 
-    /* ---------------- Flow Monitor ---------------- */
+		/* ---------------- Flow Monitor ---------------- */
 
-    auto monitor = context.monitor;
-	
-    metrics.RunSimulation();
+		auto monitor = context.monitor;
 
-    metrics.Finalize();
+		metrics.RunSimulation();
 
-    metrics.ComputeMetrics();
-	
-    metrics.ExportResults();
-	
-	security.PrintSecurityStatistics();
-	
-	security.Finalize();
-	
-	
+		metrics.Finalize();
 
-    metrics.DestroySimulation();
+		metrics.ComputeMetrics();
+
+		metrics.ExportResults();
+
+		/* ---------- Scheduler Statistics ---------- */
+
+		scheduler.PrintSchedulerStatistics();
+
+		/* ---------- Security Statistics ---------- */
+
+		security.PrintSecurityStatistics();
+
+		security.Finalize();
+
+		metrics.DestroySimulation();
 	
 	
 	

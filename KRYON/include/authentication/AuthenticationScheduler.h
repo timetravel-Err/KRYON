@@ -27,7 +27,7 @@ public:
     {
     }
 
-   void ScheduleAuthentication(
+void ScheduleAuthentication(
     const AuthenticationRequest& request,
     double timeSeconds)
 {
@@ -42,6 +42,13 @@ public:
     job.nextEventTime = timeSeconds;
 
     m_jobs.push_back(job);
+	
+	m_jobsScheduled++;
+
+	if (m_jobs.size() > m_maxQueueSize)
+	{
+		m_maxQueueSize = m_jobs.size();
+	}
 
     ns3::Simulator::Schedule(
         ns3::Seconds(timeSeconds),
@@ -50,9 +57,9 @@ public:
         m_jobs.size() - 1);
 }
 
-private:
 
-    void RunAuthentication(uint32_t jobIndex)
+void RunAuthentication(
+    uint32_t jobIndex)
 {
     if (jobIndex >= m_jobs.size())
     {
@@ -61,20 +68,134 @@ private:
 
     AuthenticationJob& job = m_jobs[jobIndex];
 
-    job.state = AuthenticationState::MESSAGE1_SENT;
+    switch (job.currentStep)
+    {
+        case 0:
+        {
+            kryon::Logger::Info(
+                "[Scheduler] RAP Step 1 : Authentication Request");
 
-    m_security.ExecuteAuthentication(job.request);
+            job.state = AuthenticationState::MESSAGE1_SENT;
 
-    job.state = AuthenticationState::SESSION_ESTABLISHED;
+            job.currentStep++;
 
-    job.completed = true;
+            ns3::Simulator::Schedule(
+                ns3::MilliSeconds(2),
+                &AuthenticationScheduler::RunAuthentication,
+                this,
+                jobIndex);
 
-    job.success = true;
+            break;
+        }
+
+        case 1:
+        {
+            kryon::Logger::Info(
+                "[Scheduler] RAP Step 2 : Challenge");
+
+            job.state = AuthenticationState::MESSAGE2_RECEIVED;
+
+            job.currentStep++;
+
+            ns3::Simulator::Schedule(
+                ns3::MilliSeconds(2),
+                &AuthenticationScheduler::RunAuthentication,
+                this,
+                jobIndex);
+
+            break;
+        }
+
+        case 2:
+        {
+            kryon::Logger::Info(
+                "[Scheduler] RAP Step 3 : Challenge Response");
+
+            job.state = AuthenticationState::MESSAGE3_SENT;
+
+            job.currentStep++;
+
+            ns3::Simulator::Schedule(
+                ns3::MilliSeconds(2),
+                &AuthenticationScheduler::RunAuthentication,
+                this,
+                jobIndex);
+
+            break;
+        }
+
+        case 3:
+        {
+            kryon::Logger::Info(
+                "[Scheduler] Executing RAP Authentication");
+
+            job.state = AuthenticationState::KEY_AGREEMENT;
+
+            m_security.ExecuteAuthentication(job.request);
+
+            job.currentStep++;
+
+            ns3::Simulator::Schedule(
+                ns3::MilliSeconds(1),
+                &AuthenticationScheduler::RunAuthentication,
+                this,
+                jobIndex);
+
+            break;
+        }
+
+        case 4:
+        {
+            kryon::Logger::Info(
+                "[Scheduler] Session Established");
+
+            job.state = AuthenticationState::SESSION_ESTABLISHED;
+
+            job.completed = true;
+
+            job.success = true;
+			
+			m_jobsCompleted++;
+
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+
+void PrintSchedulerStatistics()
+{
+    kryon::Logger::Info("==========================================");
+    kryon::Logger::Info("Authentication Scheduler Statistics");
+    kryon::Logger::Info("==========================================");
+
+    kryon::Logger::Info(
+        "Jobs Scheduled : " +
+        std::to_string(m_jobsScheduled));
+
+    kryon::Logger::Info(
+        "Jobs Completed : " +
+        std::to_string(m_jobsCompleted));
+
+    kryon::Logger::Info(
+        "Maximum Queue Size : " +
+        std::to_string(m_maxQueueSize));
+
+    kryon::Logger::Info("==========================================");
 }
 
 private:
 
     std::vector<AuthenticationJob> m_jobs;
+	
+	uint32_t m_jobsScheduled = 0;
+
+	uint32_t m_jobsCompleted = 0;
+
+	uint32_t m_maxQueueSize = 0;
 
     const ExperimentConfig& m_config;
 

@@ -17,6 +17,19 @@ struct AuthenticationJob
     double startTime = 0.0;
 
     double nextEventTime = 0.0;
+	
+	/*
+	 * Current RAP protocol step
+	 *
+	 * 0 -> Not started
+	 * 1 -> Message 1
+	 * 2 -> Message 2
+	 * 3 -> Message 3
+	 * 4 -> Key Agreement
+	 * 5 -> Session Established
+	 */
+	 
+	uint32_t currentStep = 0;
 
     bool completed = false;
 
