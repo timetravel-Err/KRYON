@@ -58,8 +58,7 @@ void ScheduleAuthentication(
 }
 
 
-void RunAuthentication(
-    uint32_t jobIndex)
+void RunAuthentication(uint32_t jobIndex)
 {
     if (jobIndex >= m_jobs.size())
     {
@@ -72,8 +71,7 @@ void RunAuthentication(
     {
         case 0:
         {
-            kryon::Logger::Info(
-                "[Scheduler] RAP Step 1 : Authentication Request");
+            Logger::Info("[Scheduler] RAP Step 1 : Authentication Request");
 
             job.state = AuthenticationState::MESSAGE1_SENT;
 
@@ -90,8 +88,7 @@ void RunAuthentication(
 
         case 1:
         {
-            kryon::Logger::Info(
-                "[Scheduler] RAP Step 2 : Challenge");
+            Logger::Info("[Scheduler] RAP Step 2 : Challenge");
 
             job.state = AuthenticationState::MESSAGE2_RECEIVED;
 
@@ -108,8 +105,7 @@ void RunAuthentication(
 
         case 2:
         {
-            kryon::Logger::Info(
-                "[Scheduler] RAP Step 3 : Challenge Response");
+            Logger::Info("[Scheduler] RAP Step 3 : Challenge Response");
 
             job.state = AuthenticationState::MESSAGE3_SENT;
 
@@ -126,8 +122,7 @@ void RunAuthentication(
 
         case 3:
         {
-            kryon::Logger::Info(
-                "[Scheduler] Executing RAP Authentication");
+            Logger::Info("[Scheduler] RAP Step 4 : Execute Authentication");
 
             job.state = AuthenticationState::KEY_AGREEMENT;
 
@@ -146,8 +141,7 @@ void RunAuthentication(
 
         case 4:
         {
-            kryon::Logger::Info(
-                "[Scheduler] Session Established");
+            Logger::Info("[Scheduler] RAP Step 5 : Session Established");
 
             job.state = AuthenticationState::SESSION_ESTABLISHED;
 
@@ -164,7 +158,6 @@ void RunAuthentication(
             break;
     }
 }
-
 
 void PrintSchedulerStatistics()
 {

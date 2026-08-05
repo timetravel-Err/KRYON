@@ -29,6 +29,11 @@ struct AuthenticationJob
 	 * 5 -> Session Established
 	 */
 	 
+	/*
+	 * Total RAP protocol steps
+	 */
+	uint32_t totalSteps = 5; 
+	
 	uint32_t currentStep = 0;
 
     bool completed = false;
