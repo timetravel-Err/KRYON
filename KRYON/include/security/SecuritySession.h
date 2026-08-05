@@ -20,6 +20,7 @@
 #include <string>
 
 #include "SecurityTypes.h"
+#include "../authentication/AuthenticationTypes.h"
 
 namespace kryon
 {
@@ -37,8 +38,8 @@ struct SecuritySession
 
     /* ---------- States ---------- */
 
-    AuthenticationState authenticationState =
-        AuthenticationState::NOT_STARTED;
+   AuthenticationStatus authenticationState =
+    AuthenticationStatus::NOT_STARTED;
 
     SessionState sessionState =
         SessionState::CREATED;

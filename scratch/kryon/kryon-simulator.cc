@@ -38,6 +38,7 @@
 #include "ns3/applications-module.h"
 #include "ns3/flow-monitor-module.h"
 #include "ns3/olsr-module.h"
+#include "../../KRYON/include/authentication/AuthenticationScheduler.h"
 
 #include <fstream>
 
@@ -88,6 +89,8 @@ int main(int argc, char *argv[])
 	kryon::ApplicationEngine application(config, context);
 
 	application.Initialize();
+	
+	
 
     // 2PQS-IoAV Authentication & Key Agreement (AKA) traffic:
     // - Drone sends mα = ⟨EIDα, VIDα, Tα, Cα⟩ = 6688 bits (836 bytes) to AV
@@ -96,27 +99,40 @@ int main(int argc, char *argv[])
 
 	
     /* ---------- Security ---------- */
+	
     kryon::SecurityEngine security(config, context);
+	
+	kryon::AuthenticationScheduler scheduler(
+    config,
+    context,
+    security);
 	
 	security.Initialize();
 	
-	if (context.totalDrones == 0 || context.totalAVs == 0)
+	// ----------------------------------------------
+	// Authentication Experiment Configuration
+	// ----------------------------------------------
+
+	uint32_t dronesToAuthenticate = context.totalDrones;
+	uint32_t vehiclesPerDrone     = context.totalAVs;
+	uint32_t authCounter = 0;
+	
+	if (dronesToAuthenticate == 0 || vehiclesPerDrone == 0)
 	{
 		kryon::Logger::Info("No drones or vehicles available.");
 		return 0;
 	}
 
-	for (uint32_t d = 0; d < context.totalDrones; ++d)
+	for (uint32_t d = 0; d < dronesToAuthenticate; ++d)
 {
-    uint32_t droneId =
-        context.drones.Get(d)->GetId();
+    uint32_t droneId = context.drones.Get(d)->GetId();
 
     kryon::Logger::Info("==================================");
     kryon::Logger::Info(
         "Drone " + std::to_string(droneId) +
         " starting authentication");
 
-    for (uint32_t v = 0; v < context.totalAVs; ++v)
+    for (uint32_t v = 0; v < vehiclesPerDrone; ++v)
     {
         kryon::AuthenticationRequest request;
 
@@ -144,8 +160,13 @@ int main(int argc, char *argv[])
             " authenticating Vehicle " +
             std::to_string(request.destinationNodeId));
 
-        security.ExecuteAuthentication(request);
-    }
+        double authTime = 0.002 * authCounter;
+		authCounter++;
+
+		scheduler.ScheduleAuthentication(
+			request,
+			authTime);
+			}
 }
 	
    /* ---------------- Metrics ---------------- */

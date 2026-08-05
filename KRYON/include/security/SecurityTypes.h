@@ -27,13 +27,6 @@ namespace kryon
 
 /* ---------- Authentication ---------- */
 
-enum class AuthenticationState
-{
-    NOT_STARTED,
-    IN_PROGRESS,
-    SUCCESS,
-    FAILED
-};
 
 /* ---------- Session ---------- */
 

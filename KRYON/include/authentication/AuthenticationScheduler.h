@@ -6,6 +6,8 @@
 #include "../security/SecurityEngine.h"
 
 #include "ns3/core-module.h"
+#include "AuthenticationJob.h"
+#include <vector>
 
 namespace kryon
 {
@@ -25,26 +27,54 @@ public:
     {
     }
 
-    void ScheduleAuthentication(
-        const AuthenticationRequest& request,
-        double timeSeconds)
-    {
-        ns3::Simulator::Schedule(
-            ns3::Seconds(timeSeconds),
-            &AuthenticationScheduler::RunAuthentication,
-            this,
-            request);
-    }
+   void ScheduleAuthentication(
+    const AuthenticationRequest& request,
+    double timeSeconds)
+{
+    AuthenticationJob job;
+
+    job.request = request;
+
+    job.state = AuthenticationState::IDLE;
+
+    job.startTime = timeSeconds;
+
+    job.nextEventTime = timeSeconds;
+
+    m_jobs.push_back(job);
+
+    ns3::Simulator::Schedule(
+        ns3::Seconds(timeSeconds),
+        &AuthenticationScheduler::RunAuthentication,
+        this,
+        m_jobs.size() - 1);
+}
 
 private:
 
-    void RunAuthentication(
-        AuthenticationRequest request)
+    void RunAuthentication(uint32_t jobIndex)
+{
+    if (jobIndex >= m_jobs.size())
     {
-        m_security.ExecuteAuthentication(request);
+        return;
     }
 
+    AuthenticationJob& job = m_jobs[jobIndex];
+
+    job.state = AuthenticationState::MESSAGE1_SENT;
+
+    m_security.ExecuteAuthentication(job.request);
+
+    job.state = AuthenticationState::SESSION_ESTABLISHED;
+
+    job.completed = true;
+
+    job.success = true;
+}
+
 private:
+
+    std::vector<AuthenticationJob> m_jobs;
 
     const ExperimentConfig& m_config;
 
