@@ -90,6 +90,23 @@ public:
         nonce.bytes = GenerateBytes(length);
         return nonce;
     }
+	
+	
+	/* ------------------------------------------------------
+	 * Generate Random Time
+	 * ------------------------------------------------------*/
+
+	double GenerateUniformDouble(
+		double minimum,
+		double maximum)
+	{
+		ns3::Ptr<ns3::UniformRandomVariable> rng =
+			ns3::CreateObject<ns3::UniformRandomVariable>();
+
+		return rng->GetValue(
+			minimum,
+			maximum);
+	}
 
     /* ------------------------------------------------------
      * Finalize

@@ -5,8 +5,8 @@
 #include "../core/ExperimentConfig.h"
 #include "../core/IdGenerator.h"
 #include "AuthenticationScheduler.h"
-
 #include "ns3/core-module.h"
+#include "../crypto/RandomEngine.h"
 
 namespace kryon
 {
@@ -22,13 +22,13 @@ public:
         :
         m_config(config),
         m_context(context),
-        m_scheduler(scheduler)
+        m_scheduler(scheduler),
+		m_random(config, context)
     {
     }
 
     void GenerateTraffic(double intervalSeconds)
     {
-        double time = 0.0;
 
         for (uint32_t d = 0; d < m_context.totalDrones; ++d)
         {
@@ -54,14 +54,17 @@ public:
                 request.requiresMutualAuthentication =
                     true;
 
-                request.timestamp =
-                    time;
+                double authTime =
+				m_random.GenerateUniformDouble(
+					0.0,
+					m_config.simTime);
 
-                m_scheduler.ScheduleAuthentication(
-                    request,
-                    time);
+				request.timestamp =
+					authTime;
 
-                time += intervalSeconds;
+				m_scheduler.ScheduleAuthentication(
+					request,
+					authTime);
             }
         }
     }
@@ -73,6 +76,8 @@ private:
     SimulationContext& m_context;
 
     AuthenticationScheduler& m_scheduler;
+	
+	RandomEngine m_random;
 };
 
 }
