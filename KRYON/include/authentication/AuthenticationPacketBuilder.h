@@ -36,6 +36,61 @@ public:
 
     AuthenticationPacketBuilder() = default;
 
+    AuthRequestPacket BuildRequest(
+        const AuthenticationRequest& request)
+    {
+        AuthRequestPacket packet;
+
+        packet.requestId       = request.requestId;
+        packet.sourceNode      = request.sourceNodeId;
+        packet.destinationNode = request.destinationNodeId;
+        packet.timestamp       = request.timestamp;
+
+        return packet;
+    }
+
+    AuthChallengePacket BuildChallenge(
+        const AuthenticationChallenge& challenge)
+    {
+        
+    AuthChallengePacket packet;
+
+    packet.requestId       = challenge.requestId;
+    packet.sourceNode      = challenge.sourceNodeId;
+    packet.destinationNode = challenge.destinationNodeId;
+    packet.timestamp       = challenge.timestamp;
+
+    packet.challenge = challenge.challenge;
+
+    return packet;
+
+    }
+
+    AuthResponsePacket BuildResponse(
+        const AuthenticationResponse& response)
+    {
+        AuthResponsePacket packet;
+
+        packet.requestId = response.requestId;
+
+        return packet;
+    }
+
+    AuthConfirmPacket BuildConfirmation(
+        const AuthenticationResult& result)
+    {
+       AuthConfirmPacket packet;
+
+    packet.requestId = result.requestId;
+
+    packet.authenticationSuccessful =
+        result.authenticated;
+
+    packet.message = result.reason;
+
+    return packet;
+    }
+
 };
 
 }

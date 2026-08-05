@@ -7,6 +7,7 @@
 
 #include "ns3/core-module.h"
 #include "AuthenticationJob.h"
+#include "AuthenticationPacketBuilder.h"
 #include <vector>
 
 namespace kryon
@@ -71,7 +72,22 @@ void RunAuthentication(uint32_t jobIndex)
     {
         case 0:
         {
-            Logger::Info("[Scheduler] RAP Step 1 : Authentication Request");
+           Logger::Info(
+						"[Scheduler][" +
+						job.request.requestId +
+						"][Drone=" +
+						std::to_string(job.request.sourceNodeId) +
+						"][Vehicle=" +
+						std::to_string(job.request.destinationNodeId) +
+						"] RAP Step 1 : Authentication Request");
+			
+			AuthRequestPacket packet =
+				m_packetBuilder.BuildRequest(job.request);
+
+			Logger::Info(
+				"[Scheduler] Built AuthRequestPacket (" +
+				std::to_string(packet.GetPacketSize()) +
+				" bytes)");
 
             job.state = AuthenticationState::MESSAGE1_SENT;
 
@@ -88,7 +104,10 @@ void RunAuthentication(uint32_t jobIndex)
 
         case 1:
         {
-            Logger::Info("[Scheduler] RAP Step 2 : Challenge");
+            Logger::Info(
+							"[Scheduler][" +
+							job.request.requestId +
+							"] RAP Step 2 : Challenge");
 
             job.state = AuthenticationState::MESSAGE2_RECEIVED;
 
@@ -105,7 +124,10 @@ void RunAuthentication(uint32_t jobIndex)
 
         case 2:
         {
-            Logger::Info("[Scheduler] RAP Step 3 : Challenge Response");
+            Logger::Info(
+							"[Scheduler][" +
+							job.request.requestId +
+							"] RAP Step 3 : Challenge Response");
 
             job.state = AuthenticationState::MESSAGE3_SENT;
 
@@ -122,7 +144,10 @@ void RunAuthentication(uint32_t jobIndex)
 
         case 3:
         {
-            Logger::Info("[Scheduler] RAP Step 4 : Execute Authentication");
+           Logger::Info(
+						"[Scheduler][" +
+						job.request.requestId +
+						"] RAP Step 4 : Execute Authentication");
 
             job.state = AuthenticationState::KEY_AGREEMENT;
 
@@ -141,7 +166,10 @@ void RunAuthentication(uint32_t jobIndex)
 
         case 4:
         {
-            Logger::Info("[Scheduler] RAP Step 5 : Session Established");
+            Logger::Info(
+							"[Scheduler][" +
+							job.request.requestId +
+							"] RAP Step 5 : Session Established");
 
             job.state = AuthenticationState::SESSION_ESTABLISHED;
 
@@ -195,6 +223,8 @@ private:
     SimulationContext& m_context;
 
     SecurityEngine& m_security;
+	
+	AuthenticationPacketBuilder m_packetBuilder;
 };
 
 }
