@@ -48,8 +48,6 @@ class AuthenticationTransport
 {
 public:
 
-    using RequestHandler =
-        std::function<void(const AuthRequestPacket&)>;
 
     AuthenticationTransport(
         const ExperimentConfig& config,
@@ -69,16 +67,7 @@ public:
     {
         Logger::Info("Authentication Transport initialized.");
     }
-
-    /* ------------------------------------------------------
-     * Register Receiver
-     * ------------------------------------------------------*/
-
-    void RegisterRequestHandler(
-        RequestHandler handler)
-    {
-        m_requestHandler = handler;
-    }
+    
 
     /* ------------------------------------------------------
      * Send Request Packet
@@ -126,16 +115,6 @@ private:
         packet.requestId + ")");
 
 	m_receiver.Receive(packet);
-    if (!m_requestHandler)
-    {
-        Logger::Warning(
-            "[Transport] No RequestHandler registered.");
-        return;
-    }
-
-    
-
-	m_requestHandler(packet);
 }
 
 private:
@@ -143,8 +122,6 @@ private:
     const ExperimentConfig& m_config;
 
     SimulationContext& m_context;
-
-    RequestHandler m_requestHandler;
 	
 	AuthenticationReceiver m_receiver;
 	
