@@ -58,6 +58,7 @@ public:
         m_config(config),
         m_context(context)
     {
+		 m_receiver.SetDispatcher(&m_dispatcher);
     }
 
     /* ------------------------------------------------------
@@ -110,6 +111,11 @@ public:
     {
         Logger::Info("Authentication Transport finalized.");
     }
+	
+	AuthenticationReceiver& GetReceiver()
+{
+    return m_receiver;
+}
 
 private:
 
@@ -119,6 +125,7 @@ private:
         "[Transport] Delivered AuthRequestPacket (" +
         packet.requestId + ")");
 
+	m_receiver.Receive(packet);
     if (!m_requestHandler)
     {
         Logger::Warning(
@@ -126,7 +133,9 @@ private:
         return;
     }
 
-    m_requestHandler(packet);
+    
+
+	m_requestHandler(packet);
 }
 
 private:
@@ -136,6 +145,10 @@ private:
     SimulationContext& m_context;
 
     RequestHandler m_requestHandler;
+	
+	AuthenticationReceiver m_receiver;
+	
+	AuthenticationDispatcher m_dispatcher;
 	
 
 };
