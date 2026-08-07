@@ -155,7 +155,9 @@ process_options()
 add_subdirectory(src)
 
 # Build NS library examples
-add_subdirectory(examples)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/examples)
+    add_subdirectory(examples)
+endif()
 
 # Build scratch/simulation scripts
 add_subdirectory(scratch)

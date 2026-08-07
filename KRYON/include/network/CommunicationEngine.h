@@ -30,6 +30,9 @@
 #include "ns3/network-module.h"
 #include "ns3/olsr-module.h"
 #include "ns3/wifi-module.h"
+#include "ns3/socket.h"
+#include "ns3/udp-socket-factory.h"
+
 namespace kryon
 {
 
@@ -54,8 +57,30 @@ public:
 	
 	AssignIpv4Addresses();
 	
+	CreateSockets();
+	
     Logger::Info("Communication Engine initialized.");
 }
+
+		void SendUdpPacket(
+			uint32_t sourceDrone,
+			uint32_t destinationVehicle,
+			ns3::Ptr<ns3::Packet> packet)
+		{
+			m_context.droneSockets[sourceDrone]->SendTo(
+				packet,
+				0,
+				ns3::InetSocketAddress(
+					m_context.avInterfaces.GetAddress(destinationVehicle),
+					9000));
+
+			Logger::Info(
+				"UDP packet sent from Drone " +
+				std::to_string(sourceDrone) +
+				" to Vehicle " +
+				std::to_string(destinationVehicle));
+		}
+
 private:
 
     const ExperimentConfig& m_config;
@@ -162,6 +187,85 @@ void AssignIpv4Addresses()
 
     Logger::Info("IPv4 addresses assigned.");
 }
+void CreateSockets()
+{
+    //
+    // Drone sockets
+    //
+
+    for (uint32_t i = 0; i < m_context.drones.GetN(); ++i)
+    {
+        ns3::Ptr<ns3::Socket> socket =
+            ns3::Socket::CreateSocket(
+                m_context.drones.Get(i),
+                ns3::UdpSocketFactory::GetTypeId());
+
+        socket->Bind(
+            ns3::InetSocketAddress(
+                m_context.droneInterfaces.GetAddress(i),
+                9000));
+				
+		socket->SetRecvCallback(
+		ns3::MakeCallback(
+        &CommunicationEngine::ReceivePacket,
+        this));		
+
+        m_context.droneSockets.push_back(socket);
+    }
+
+    //
+    // Vehicle sockets
+    //
+
+    for (uint32_t i = 0; i < m_context.avs.GetN(); ++i)
+    {
+        ns3::Ptr<ns3::Socket> socket =
+            ns3::Socket::CreateSocket(
+                m_context.avs.Get(i),
+                ns3::UdpSocketFactory::GetTypeId());
+
+        socket->Bind(
+            ns3::InetSocketAddress(
+                m_context.avInterfaces.GetAddress(i),
+                9000));
+				
+		socket->SetRecvCallback(
+    ns3::MakeCallback(
+        &CommunicationEngine::ReceivePacket,
+        this));		
+
+        m_context.avSockets.push_back(socket);
+    }
+
+    Logger::Info("UDP sockets created.");
+}
+
+	void ReceivePacket(ns3::Ptr<ns3::Socket> socket)
+{
+    while (ns3::Ptr<ns3::Packet> packet = socket->Recv())
+    {
+        /*Logger::Info(
+            "UDP packet received (" +
+            std::to_string(packet->GetSize()) +
+            " bytes)");*/
+			
+			static uint32_t counter = 0;
+
+			counter++;
+
+			if (counter % 100 == 0)
+			{
+				Logger::Info(
+					"Total UDP packets received = " +
+					std::to_string(counter));
+			}
+    }
+}
+
+void InitializeSockets()
+{
+    Logger::Info("Initializing UDP sockets.");
+}
 
 ns3::WifiHelper wifi;
 
@@ -170,6 +274,11 @@ ns3::WifiMacHelper wifiMac;
 ns3::YansWifiChannelHelper wifiChannel;
 
 ns3::YansWifiPhyHelper wifiPhy;
+
+std::vector<ns3::Ptr<ns3::Socket>> m_droneSockets;
+
+std::vector<ns3::Ptr<ns3::Socket>> m_vehicleSockets;
+
 };
 
 }

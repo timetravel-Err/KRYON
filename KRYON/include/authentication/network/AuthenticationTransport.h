@@ -48,6 +48,8 @@ class AuthenticationTransport
 {
 public:
 
+	using RequestHandler =
+    std::function<void(const AuthRequestPacket&)>;
 
     AuthenticationTransport(
         const ExperimentConfig& config,
@@ -68,6 +70,10 @@ public:
         Logger::Info("Authentication Transport initialized.");
     }
     
+	void RegisterRequestHandler(RequestHandler handler)
+	{
+		m_requestHandler = handler;
+	}
 
     /* ------------------------------------------------------
      * Send Request Packet
@@ -111,10 +117,16 @@ private:
   void DeliverRequest(AuthRequestPacket packet)
 {
     Logger::Info(
-        "[Transport] Delivered AuthRequestPacket (" +
-        packet.requestId + ")");
+			"[Transport] Delivered AuthRequestPacket (" +
+			packet.requestId + ")");
 
-	m_receiver.Receive(packet);
+		//
+		// Phase 9
+		// Convert to an ns-3 packet
+		//
+
+		m_receiver.Receive(packet);
+	
 }
 
 private:
@@ -126,6 +138,8 @@ private:
 	AuthenticationReceiver m_receiver;
 	
 	AuthenticationDispatcher m_dispatcher;
+	
+	RequestHandler m_requestHandler;
 	
 
 };

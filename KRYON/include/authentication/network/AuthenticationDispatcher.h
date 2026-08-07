@@ -68,11 +68,18 @@ public:
 		{
 			case AuthenticationPacketType::AUTH_REQUEST:
 
-				Logger::Info(
-					"[Dispatcher] Routing AUTH_REQUEST : " +
-					packet.requestId);
+				{
+					Logger::Info(
+						"[Dispatcher] Routing AUTH_REQUEST : " +
+						packet.requestId);
 
-				break;
+					const AuthRequestPacket& request =
+						static_cast<const AuthRequestPacket&>(packet);
+
+					m_manager->ProcessAuthenticationRequest(request);
+
+					break;
+				}
 
 			case AuthenticationPacketType::AUTH_CHALLENGE:
 

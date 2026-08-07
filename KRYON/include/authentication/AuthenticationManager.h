@@ -27,6 +27,7 @@
 #include "protocols/rap/RAPAuthenticationProtocol.h"
 #include "SessionManager.h"
 
+#include "packets/AuthRequestPacket.h"
 namespace kryon
 {
 
@@ -92,6 +93,21 @@ void Initialize()
     Logger::Info("Authentication Manager initialized.");
 }
 
+void ProcessAuthenticationRequest(
+    const AuthRequestPacket& packet)
+{
+    Logger::Info(
+        "[AuthenticationManager] Processing packet : " +
+        packet.requestId);
+
+    AuthenticationRequest request;
+
+    request.requestId = packet.requestId;
+    request.sourceNodeId = packet.sourceNode;
+    request.destinationNodeId = packet.destinationNode;
+
+    Authenticate(request);
+}
 
 
   AuthenticationResult Authenticate(
@@ -256,7 +272,10 @@ private:
     std::unique_ptr<IAuthenticationProtocol> m_protocol;
 	
 	SessionManager m_sessionManager;
+	
+	
 };
+
 
 }
 

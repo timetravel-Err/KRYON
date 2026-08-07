@@ -8,7 +8,6 @@
 #include "ns3/core-module.h"
 #include "AuthenticationJob.h"
 #include "AuthenticationPacketBuilder.h"
-#include "network/AuthenticationTransport.h"
 #include <vector>
 
 namespace kryon
@@ -25,10 +24,10 @@ public:
         :
         m_config(config),
         m_context(context),
-        m_security(security),
-		m_transport(config, context)
+        m_security(security)
+		
     {
-		m_transport.Initialize();
+		
     }
 
 void ScheduleAuthentication(
@@ -92,7 +91,7 @@ void RunAuthentication(uint32_t jobIndex)
 				std::to_string(packet.GetPacketSize()) +
 				" bytes)");
 				
-			m_transport.SendRequest(packet);	
+			OnRequestReceived(packet);	
 
             job.state = AuthenticationState::MESSAGE1_SENT;
 
@@ -192,7 +191,14 @@ void RunAuthentication(uint32_t jobIndex)
     }
 }
 
-void PrintSchedulerStatistics()
+	void OnRequestReceived(const AuthRequestPacket& packet)
+	{
+		Logger::Info(
+			"[Scheduler] Request received callback : " +
+			packet.requestId);
+	}
+	
+	void PrintSchedulerStatistics()
 {
     kryon::Logger::Info("==========================================");
     kryon::Logger::Info("Authentication Scheduler Statistics");
@@ -231,7 +237,6 @@ private:
 	
 	AuthenticationPacketBuilder m_packetBuilder;
 	
-	AuthenticationTransport m_transport;
 };
 
 }

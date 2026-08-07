@@ -19,6 +19,8 @@
 #include "ns3/flow-monitor-module.h"
 #include "../security/SecurityContext.h"
 #include "../metrics/ExperimentMetrics.h"
+#include "ns3/socket.h"
+#include <vector>
 namespace kryon
 {
 
@@ -52,6 +54,12 @@ struct SimulationContext
 
     ns3::Ipv4InterfaceContainer droneInterfaces;
     ns3::Ipv4InterfaceContainer avInterfaces;
+	
+	/* ---------- UDP Sockets ---------- */
+
+	std::vector<ns3::Ptr<ns3::Socket>> droneSockets;
+
+	std::vector<ns3::Ptr<ns3::Socket>> avSockets;
 
     /* ---------- Monitoring ---------- */
 
