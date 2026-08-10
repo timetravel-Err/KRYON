@@ -126,37 +126,165 @@ void RunAuthentication(uint32_t jobIndex)
 
     AuthenticationJob& job = m_jobs[jobIndex];
 
+    if (job.completed)
+    {
+        return;
+    }
+
     switch (job.currentStep)
     {
+        // --------------------------------------------------
+        // STEP 1 : Authentication Request
+        // --------------------------------------------------
+
         case 0:
         {
-         Logger::Info(
-        "[Scheduler][" +
-        job.request.requestId +
-        "][Drone=" +
-        std::to_string(job.request.sourceNodeId) +
-        "][Vehicle=" +
-        std::to_string(job.request.destinationNodeId) +
-        "] RAP Step 1 : Authentication Request");
+            Logger::Info(
+                "[Scheduler][" +
+                job.request.requestId +
+                "][Drone=" +
+                std::to_string(job.request.sourceNodeId) +
+                "][Vehicle=" +
+                std::to_string(job.request.destinationNodeId) +
+                "] RAP Step 1 : Authentication Request");
 
-    AuthRequestPacket packet =
-        m_packetBuilder.BuildRequest(job.request);
+            AuthRequestPacket packet =
+                m_packetBuilder.BuildRequest(job.request);
 
-    Logger::Info(
-        "[Scheduler] Built AuthRequestPacket (" +
-        std::to_string(packet.GetPacketSize()) +
-        " bytes)");
+            Logger::Info(
+                "[Scheduler] Built AuthRequestPacket (" +
+                std::to_string(packet.GetPacketSize()) +
+                " bytes)");
 
-    m_transport.SendRequest(packet);
+            m_transport.SendRequest(packet);
 
-    job.state = AuthenticationState::MESSAGE1_SENT;
+            job.state =
+                AuthenticationState::MESSAGE1_SENT;
 
-    break;
+            job.currentStep = 1;
+
+            job.nextEventTime =
+                ns3::Simulator::Now().GetSeconds() + 0.001;
+
+            break;
         }
 
+        // --------------------------------------------------
+        // STEP 2
+        // --------------------------------------------------
+
+        case 1:
+        {
+            Logger::Info(
+                "[Scheduler][" +
+                job.request.requestId +
+                "] RAP Step 2 : Challenge");
+
+            job.state =
+                AuthenticationState::MESSAGE2_RECEIVED;
+
+            job.currentStep = 2;
+
+            job.nextEventTime =
+                ns3::Simulator::Now().GetSeconds() + 0.001;
+
+            ns3::Simulator::Schedule(
+                ns3::MilliSeconds(1),
+                &AuthenticationScheduler::RunAuthentication,
+                this,
+                jobIndex);
+
+            break;
+        }
+
+        // --------------------------------------------------
+        // STEP 3
+        // --------------------------------------------------
+
+        case 2:
+        {
+            Logger::Info(
+                "[Scheduler][" +
+                job.request.requestId +
+                "] RAP Step 3 : Challenge Response");
+
+            job.state =
+                AuthenticationState::MESSAGE3_SENT;
+
+            job.currentStep = 3;
+
+            job.nextEventTime =
+                ns3::Simulator::Now().GetSeconds() + 0.001;
+
+            ns3::Simulator::Schedule(
+                ns3::MilliSeconds(1),
+                &AuthenticationScheduler::RunAuthentication,
+                this,
+                jobIndex);
+
+            break;
+        }
+
+        // --------------------------------------------------
+        // STEP 4
+        // --------------------------------------------------
+
+        case 3:
+        {
+            Logger::Info(
+                "[Scheduler][" +
+                job.request.requestId +
+                "] RAP Step 4 : Key Agreement");
+
+            job.state =
+                AuthenticationState::KEY_AGREEMENT;
+
+            job.currentStep = 4;
+
+            job.nextEventTime =
+                ns3::Simulator::Now().GetSeconds() + 0.001;
+
+            ns3::Simulator::Schedule(
+                ns3::MilliSeconds(1),
+                &AuthenticationScheduler::RunAuthentication,
+                this,
+                jobIndex);
+
+            break;
+        }
+
+        // --------------------------------------------------
+        // STEP 5
+        // --------------------------------------------------
+
+        case 4:
+        {
+            Logger::Info(
+                "[Scheduler][" +
+                job.request.requestId +
+                "] RAP Step 5 : Session Established");
+
+            /*
+             * IMPORTANT:
+             *
+             * Do not mark the authentication successful here.
+             *
+             * The actual RAP implementation currently completes
+             * through AuthenticationManager::Authenticate()
+             * and invokes OnAuthenticationCompleted().
+             */
+
+            job.currentStep = 5;
+
+            break;
+        }
+
+        default:
+        {
+            return;
+        }
     }
 }
-
 	void PrintSchedulerStatistics()
 {
     kryon::Logger::Info("==========================================");
