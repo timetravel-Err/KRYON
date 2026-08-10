@@ -11,6 +11,7 @@
 #include "../packets/AuthResponsePacket.h"
 #include "../packets/AuthConfirmPacket.h"
 
+
 namespace kryon
 {
 
@@ -41,26 +42,22 @@ class AuthenticationDispatcher
 {
 public:
 
-    void SetAuthenticationManager(AuthenticationManager* manager)
-	{
-		m_manager = manager;
-	}
+void SetAuthenticationManager(AuthenticationManager* manager)
+{
+    m_manager = manager;
+}
 
 
     void Dispatch(const AuthenticationPacket& packet)
 	{
-		    Logger::Info(
-        "[Dispatcher] Routing " +
-        PacketTypeToString(packet.type) +
-        " : " +
-        packet.requestId);
+		 //   Logger::Info( "[Dispatcher] Routing " + PacketTypeToString(packet.type) + " : " +  packet.requestId);
 
 		if (!m_manager)
-		{
-			Logger::Warning(
-				"[Dispatcher] AuthenticationManager not registered.");
-			return;
-		}
+{
+    Logger::Warning(
+        "[Dispatcher] AuthenticationEngine not registered.");
+    return;
+}
 		
 		
 		
@@ -117,6 +114,7 @@ public:
 private:
 
 	AuthenticationManager* m_manager = nullptr;
+	//AuthenticationEngine* m_engine = nullptr;
 	
 };
 

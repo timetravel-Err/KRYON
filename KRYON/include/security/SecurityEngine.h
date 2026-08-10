@@ -71,6 +71,12 @@ public:
     Logger::Info("Security Engine initialized.");
 }
 
+
+AuthenticationManager& GetAuthenticationManager()
+{
+    return m_authentication.GetAuthenticationManager();
+}
+
 void StartSession(SecuritySession session)
 {
     m_context.security.sessions.push_back(session);

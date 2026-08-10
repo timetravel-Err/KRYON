@@ -8,6 +8,8 @@
 #include "ns3/core-module.h"
 #include "AuthenticationJob.h"
 #include "AuthenticationPacketBuilder.h"
+#include "network/AuthenticationTransport.h"
+#include "AuthenticationManager.h"
 #include <vector>
 
 namespace kryon
@@ -18,17 +20,71 @@ class AuthenticationScheduler
 public:
 
     AuthenticationScheduler(
-        const ExperimentConfig& config,
-        SimulationContext& context,
-        SecurityEngine& security)
-        :
-        m_config(config),
-        m_context(context),
-        m_security(security)
-		
+    const ExperimentConfig& config,
+    SimulationContext& context,
+    SecurityEngine& security,
+    AuthenticationTransport& transport)
+    :
+    m_config(config),
+    m_context(context),
+    m_security(security),
+    m_transport(transport)
+	{
+       m_security
+        .GetAuthenticationManager()
+        .SetCompletionHandler(
+            [this](
+                const std::string& requestId,
+                bool success)
+            {
+                OnAuthenticationCompleted(
+                    requestId,
+                    success);
+            });
+	}
+
+void OnAuthenticationCompleted(
+    const std::string& requestId,
+    bool success)
+{
+    for (auto& job : m_jobs)
     {
-		
+        if (job.request.requestId == requestId &&
+            !job.completed)
+        {
+            job.completed = true;
+            job.success = success;
+
+            if (success)
+            {
+                job.state =
+                    AuthenticationState::SESSION_ESTABLISHED;
+
+                job.currentStep =
+                    job.totalSteps;
+            }
+            else
+            {
+                job.state =
+                    AuthenticationState::FAILED;
+            }
+
+            m_jobsCompleted++;
+
+            Logger::Info(
+                "[Scheduler][" +
+                requestId +
+                "] Authentication completed : " +
+                (success ? "SUCCESS" : "FAILURE"));
+
+            return;
+        }
     }
+
+    Logger::Warning(
+        "[Scheduler] Completion received for unknown request : " +
+        requestId);
+}
 
 void ScheduleAuthentication(
     const AuthenticationRequest& request,
@@ -74,130 +130,33 @@ void RunAuthentication(uint32_t jobIndex)
     {
         case 0:
         {
-           Logger::Info(
-						"[Scheduler][" +
-						job.request.requestId +
-						"][Drone=" +
-						std::to_string(job.request.sourceNodeId) +
-						"][Vehicle=" +
-						std::to_string(job.request.destinationNodeId) +
-						"] RAP Step 1 : Authentication Request");
-			
-			AuthRequestPacket packet =
-				m_packetBuilder.BuildRequest(job.request);
+         Logger::Info(
+        "[Scheduler][" +
+        job.request.requestId +
+        "][Drone=" +
+        std::to_string(job.request.sourceNodeId) +
+        "][Vehicle=" +
+        std::to_string(job.request.destinationNodeId) +
+        "] RAP Step 1 : Authentication Request");
 
-			Logger::Info(
-				"[Scheduler] Built AuthRequestPacket (" +
-				std::to_string(packet.GetPacketSize()) +
-				" bytes)");
-				
-			OnRequestReceived(packet);	
+    AuthRequestPacket packet =
+        m_packetBuilder.BuildRequest(job.request);
 
-            job.state = AuthenticationState::MESSAGE1_SENT;
+    Logger::Info(
+        "[Scheduler] Built AuthRequestPacket (" +
+        std::to_string(packet.GetPacketSize()) +
+        " bytes)");
 
-            job.currentStep++;
+    m_transport.SendRequest(packet);
 
-            ns3::Simulator::Schedule(
-                ns3::MilliSeconds(2),
-                &AuthenticationScheduler::RunAuthentication,
-                this,
-                jobIndex);
+    job.state = AuthenticationState::MESSAGE1_SENT;
 
-            break;
+    break;
         }
 
-        case 1:
-        {
-            Logger::Info(
-							"[Scheduler][" +
-							job.request.requestId +
-							"] RAP Step 2 : Challenge");
-
-            job.state = AuthenticationState::MESSAGE2_RECEIVED;
-
-            job.currentStep++;
-
-            ns3::Simulator::Schedule(
-                ns3::MilliSeconds(2),
-                &AuthenticationScheduler::RunAuthentication,
-                this,
-                jobIndex);
-
-            break;
-        }
-
-        case 2:
-        {
-            Logger::Info(
-							"[Scheduler][" +
-							job.request.requestId +
-							"] RAP Step 3 : Challenge Response");
-
-            job.state = AuthenticationState::MESSAGE3_SENT;
-
-            job.currentStep++;
-
-            ns3::Simulator::Schedule(
-                ns3::MilliSeconds(2),
-                &AuthenticationScheduler::RunAuthentication,
-                this,
-                jobIndex);
-
-            break;
-        }
-
-        case 3:
-        {
-           Logger::Info(
-						"[Scheduler][" +
-						job.request.requestId +
-						"] RAP Step 4 : Execute Authentication");
-
-            job.state = AuthenticationState::KEY_AGREEMENT;
-
-            m_security.ExecuteAuthentication(job.request);
-
-            job.currentStep++;
-
-            ns3::Simulator::Schedule(
-                ns3::MilliSeconds(1),
-                &AuthenticationScheduler::RunAuthentication,
-                this,
-                jobIndex);
-
-            break;
-        }
-
-        case 4:
-        {
-            Logger::Info(
-							"[Scheduler][" +
-							job.request.requestId +
-							"] RAP Step 5 : Session Established");
-
-            job.state = AuthenticationState::SESSION_ESTABLISHED;
-
-            job.completed = true;
-
-            job.success = true;
-			
-			m_jobsCompleted++;
-
-            break;
-        }
-
-        default:
-            break;
     }
 }
 
-	void OnRequestReceived(const AuthRequestPacket& packet)
-	{
-		Logger::Info(
-			"[Scheduler] Request received callback : " +
-			packet.requestId);
-	}
-	
 	void PrintSchedulerStatistics()
 {
     kryon::Logger::Info("==========================================");
@@ -234,6 +193,8 @@ private:
     SimulationContext& m_context;
 
     SecurityEngine& m_security;
+	
+	AuthenticationTransport& m_transport;
 	
 	AuthenticationPacketBuilder m_packetBuilder;
 	

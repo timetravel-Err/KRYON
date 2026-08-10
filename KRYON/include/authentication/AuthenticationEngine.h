@@ -31,6 +31,9 @@
 #include "AuthenticationResult.h"
 #include "AuthenticationTypes.h"
 #include "AuthenticationManager.h"
+#include "network/AuthenticationTransport.h"
+#include "network/AuthenticationReceiver.h"
+#include "network/AuthenticationDispatcher.h"
 #include <chrono>
 namespace kryon
 {
@@ -43,6 +46,7 @@ public:
                      SimulationContext& context)
     : m_config(config),
       m_context(context),
+	
       m_manager(config, context)
 {
 }
@@ -54,6 +58,12 @@ void SetCryptoEngine(CryptoEngine* crypto)
     void Initialize()
     {
 		m_manager.Initialize();
+		
+		m_dispatcher.SetAuthenticationManager(&m_manager);
+		
+
+
+		m_receiver.SetDispatcher(&m_dispatcher);
 
         Logger::Info("Authentication Engine initialized.");
     }
@@ -157,12 +167,23 @@ Logger::Info("============================================");
 		return m_manager;
 	}
 
+	void SetTransport(AuthenticationTransport* transport)
+{
+    m_transport = transport;
+}
+
 private:
 
     const ExperimentConfig& m_config;
 
     SimulationContext& m_context;
 	
+	AuthenticationTransport* m_transport = nullptr;
+
+	AuthenticationDispatcher m_dispatcher;
+
+	AuthenticationReceiver m_receiver;
+
 	AuthenticationManager m_manager;
 };
 

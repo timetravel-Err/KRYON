@@ -28,12 +28,17 @@
 #include "SessionManager.h"
 
 #include "packets/AuthRequestPacket.h"
+#include <functional>
+
 namespace kryon
 {
 
 class AuthenticationManager
 {
 public:
+
+	using CompletionHandler =
+    std::function<void(const std::string&, bool)>;
 
     AuthenticationManager(const ExperimentConfig& config,
                           SimulationContext& context)
@@ -42,6 +47,13 @@ public:
 		  m_sessionManager(config, context)
     {
     }
+	
+	
+
+void SetCompletionHandler(CompletionHandler handler)
+{
+    m_completionHandler = handler;
+}
 
 void Initialize()
 {
@@ -110,117 +122,214 @@ void ProcessAuthenticationRequest(
 }
 
 
-  AuthenticationResult Authenticate(
-        const AuthenticationRequest& request)
-    {
-     
-	
-	double currentTime =
-	ns3::Simulator::Now().GetSeconds();
-
-	/*
-	 * Remove expired sessions before searching.
-	 */
-	m_sessionManager.RemoveExpiredSessions(
-		currentTime);
-	
-	Session* existingSession =
-    m_sessionManager.FindSession(
-    request.sourceNodeId,
-    request.destinationNodeId,
-    ns3::Simulator::Now().GetSeconds());
-
-if (existingSession)
+AuthenticationResult Authenticate(
+    const AuthenticationRequest& request)
 {
-    Logger::Info(
-        "Existing session found : " +
-        existingSession->sessionId);
+    // --------------------------------------------------
+    // Record authentication attempt
+    // --------------------------------------------------
 
-    AuthenticationResult result;
+    m_context.security.statistics.authenticationAttempts++;
 
-    result.requestId = request.requestId;
-    result.protocolName = "SESSION-RESUMPTION";
-    result.method = request.method;
+    double currentTime =
+        ns3::Simulator::Now().GetSeconds();
 
-    result.status =
-        AuthenticationStatus::SUCCESS;
+    /*
+     * Remove expired sessions before searching.
+     */
+    m_sessionManager.RemoveExpiredSessions(
+        currentTime);
 
-    result.authenticated = true;
+    /*
+     * --------------------------------------------------
+     * Check whether an authenticated session already exists
+     * --------------------------------------------------
+     */
+    Session* existingSession =
+        m_sessionManager.FindSession(
+            request.sourceNodeId,
+            request.destinationNodeId,
+            currentTime);
 
-    result.sessionId =
-        existingSession->sessionId;
-
-    result.sessionKey =
-        existingSession->sessionKey;
-
-    result.sessionLifetime =
-        existingSession->expirationTime -
-        existingSession->creationTime;
-
-    result.messagesExchanged = 0;
-    result.bytesExchanged = 0;
-    result.authenticationTimeMs = 0.0;
-
-    result.reason =
-        "Existing authenticated session reused.";
-
-    return result;
-}
-	 
-	 
-	 if (m_protocol)
-{
-    AuthenticationResult result =
-        m_protocol->Authenticate(request);
-
-    if (result.authenticated)
+    if (existingSession)
     {
-        Session session;
+        Logger::Info(
+            "Existing session found : " +
+            existingSession->sessionId);
 
-        session.sessionId =
-            "SESSION-" + request.requestId;
+        AuthenticationResult result;
 
-        session.droneId =
-            request.sourceNodeId;
+        result.requestId =
+            request.requestId;
 
-        session.vehicleId =
-            request.destinationNodeId;
+        result.protocolName =
+            "SESSION-RESUMPTION";
 
-        session.sessionKey =
-            result.sessionKey;
+        result.method =
+            request.method;
 
-        session.creationTime =
-            ns3::Simulator::Now().GetSeconds();
+        result.status =
+            AuthenticationStatus::SUCCESS;
 
-        session.expirationTime =
-            session.creationTime +
-            result.sessionLifetime;
-
-        session.active = true;
-
-        m_sessionManager.CreateSession(session);
+        result.authenticated =
+            true;
 
         result.sessionId =
-            session.sessionId;
+            existingSession->sessionId;
 
-        Logger::Info(
-            "AuthenticationManager stored session : " +
-            session.sessionId);
+        result.sessionKey =
+            existingSession->sessionKey;
+
+        result.sessionLifetime =
+            existingSession->expirationTime -
+            existingSession->creationTime;
+
+        result.messagesExchanged = 0;
+        result.bytesExchanged = 0;
+        result.authenticationTimeMs = 0.0;
+
+        result.reason =
+            "Existing authenticated session reused.";
+
+        // --------------------------------------------------
+        // Record successful session resumption
+        // --------------------------------------------------
+
+        m_context.security.statistics.authenticationSuccesses++;
+
+        // --------------------------------------------------
+        // Notify scheduler
+        // --------------------------------------------------
+
+        if (m_completionHandler)
+        {
+            m_completionHandler(
+                request.requestId,
+                result.authenticated);
+        }
+
+        return result;
+    }
+
+    /*
+     * --------------------------------------------------
+     * Perform full authentication protocol
+     * --------------------------------------------------
+     */
+    if (m_protocol)
+    {
+        AuthenticationResult result =
+            m_protocol->Authenticate(request);
+
+        /*
+         * --------------------------------------------------
+         * Successful authentication
+         * --------------------------------------------------
+         */
+        if (result.authenticated)
+        {
+            // --------------------------------------------------
+            // Record successful authentication
+            // --------------------------------------------------
+
+            m_context.security.statistics.authenticationSuccesses++;
+
+            Session session;
+
+            session.sessionId =
+                "SESSION-" + request.requestId;
+
+            session.droneId =
+                request.sourceNodeId;
+
+            session.vehicleId =
+                request.destinationNodeId;
+
+            session.sessionKey =
+                result.sessionKey;
+
+            session.creationTime =
+                ns3::Simulator::Now().GetSeconds();
+
+            session.expirationTime =
+                session.creationTime +
+                result.sessionLifetime;
+
+            session.active = true;
+
+            m_sessionManager.CreateSession(session);
+
+            result.sessionId =
+                session.sessionId;
+
+            Logger::Info(
+                "AuthenticationManager stored session : " +
+                session.sessionId);
+        }
+        else
+        {
+            // --------------------------------------------------
+            // Record failed authentication
+            // --------------------------------------------------
+
+            m_context.security.statistics.authenticationFailures++;
+        }
+
+        /*
+         * --------------------------------------------------
+         * Notify scheduler that authentication is complete
+         * --------------------------------------------------
+         */
+
+        if (m_completionHandler)
+        {
+            m_completionHandler(
+                request.requestId,
+                result.authenticated);
+        }
+
+        return result;
+    }
+
+    /*
+     * --------------------------------------------------
+     * Authentication protocol not initialized
+     * --------------------------------------------------
+     */
+
+    AuthenticationResult result;
+
+    result.requestId =
+        request.requestId;
+
+    result.method =
+        request.method;
+
+    result.status =
+        AuthenticationStatus::FAILED;
+
+    result.authenticated =
+        false;
+
+    result.reason =
+        "Authentication protocol not initialized.";
+
+    m_context.security.statistics.authenticationFailures++;
+
+    /*
+     * Notify scheduler even when authentication
+     * could not be performed.
+     */
+    if (m_completionHandler)
+    {
+        m_completionHandler(
+            request.requestId,
+            false);
     }
 
     return result;
 }
 
-    AuthenticationResult result;
-
-    result.requestId = request.requestId;
-    result.method = request.method;
-    result.status = AuthenticationStatus::FAILED;
-    result.authenticated = false;
-    result.reason = "Authentication protocol not initialized.";
-
-    return result;
-    }
 
 void Finalize()
 {
@@ -269,9 +378,11 @@ private:
 
     SimulationContext& m_context;
 
-    std::unique_ptr<IAuthenticationProtocol> m_protocol;
-	
+   std::unique_ptr<IAuthenticationProtocol> m_protocol;
+
 	SessionManager m_sessionManager;
+
+	CompletionHandler m_completionHandler;
 	
 	
 };

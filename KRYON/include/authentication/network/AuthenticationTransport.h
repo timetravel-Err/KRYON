@@ -36,6 +36,7 @@
 #include "../packets/AuthResponsePacket.h"
 #include "../packets/AuthConfirmPacket.h"
 #include "AuthenticationReceiver.h"
+#include "AuthenticationMessageCodec.h"
 
 #include "ns3/core-module.h"
 
@@ -91,6 +92,14 @@ public:
             " to Vehicle " +
             std::to_string(packet.destinationNode));
 
+         ns3::Ptr<ns3::Packet> udpPacket =
+			AuthenticationMessageCodec::Encode(packet);
+
+		Logger::Info(
+			"[Transport] Encoded packet size = " +
+			std::to_string(udpPacket->GetSize()) +
+			" bytes");
+
         ns3::Simulator::Schedule(
             ns3::MilliSeconds(delayMs),
             &AuthenticationTransport::DeliverRequest,
@@ -108,9 +117,14 @@ public:
     }
 	
 	AuthenticationReceiver& GetReceiver()
-{
-    return m_receiver;
-}
+	{
+		return m_receiver;
+	}
+
+	AuthenticationDispatcher& GetDispatcher()
+	{
+		return m_dispatcher;
+	}
 
 private:
 

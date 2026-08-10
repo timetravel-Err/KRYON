@@ -103,10 +103,19 @@ int main(int argc, char *argv[])
 	
     kryon::SecurityEngine security(config, context);
 	
+	kryon::AuthenticationTransport transport(
+    config,
+    context);
+	
+	transport.GetDispatcher()
+         .SetAuthenticationManager(
+             &security.GetAuthenticationManager());
+	
 	kryon::AuthenticationScheduler scheduler(
     config,
     context,
-    security);
+    security,
+    transport);
 	
 	kryon::AuthenticationTrafficGenerator trafficGenerator(
     config,
