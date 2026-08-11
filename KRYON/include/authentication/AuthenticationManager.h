@@ -218,8 +218,27 @@ AuthenticationResult Authenticate(
      */
     if (m_protocol)
     {
-        AuthenticationResult result =
-            m_protocol->Authenticate(request);
+       AuthenticationResult result =
+    m_protocol->Authenticate(request);
+
+		// --------------------------------------------------
+		// Store authentication metrics for experiment export
+		// --------------------------------------------------
+
+		m_context.metrics.authenticationProtocol =
+			result.protocolName;
+
+		m_context.metrics.authenticationTimeMs =
+			result.authenticationTimeMs;
+
+		m_context.metrics.authenticationMessages =
+			result.messagesExchanged;
+
+		m_context.metrics.authenticationBytes =
+			result.bytesExchanged;
+
+		m_context.metrics.authenticationSuccess =
+			result.authenticated;
 
         /*
          * --------------------------------------------------

@@ -34,6 +34,7 @@
 #include "../../AuthenticationResponse.h"
 #include "ns3/core-module.h"
 #include <random>
+#include <chrono>
 #include <algorithm>
 #include "../../../crypto/CryptoEngine.h"
 #include "../../../crypto/CryptoTypes.h"
@@ -68,9 +69,9 @@ void Initialize() override
 	
 	//Logger::Info( "RAP Crypto pointer = " + std::to_string(reinterpret_cast<uintptr_t>(m_crypto)));
 	
-	double start =
-    ns3::Simulator::Now().GetSeconds();
-	
+	//double start = ns3::Simulator::Now().GetSeconds();
+	auto start =
+    std::chrono::steady_clock::now();
 	if (m_crypto == nullptr)
 {
     AuthenticationResult result;
@@ -212,13 +213,25 @@ else
 	Logger::Info("RAP Authentication Completed");
 	Logger::Info("==========================================");
 	
-	double end =
+	/*double end =
     ns3::Simulator::Now().GetSeconds();
 
     return BuildResult(
     request,
     authenticated,
-    (end - start) * 1000.0);
+    (end - start) * 1000.0);*/
+	
+	auto end =
+    std::chrono::steady_clock::now();
+
+	double authenticationTimeMs =
+		std::chrono::duration<double, std::milli>(
+			end - start).count();
+
+	return BuildResult(
+		request,
+		authenticated,
+		authenticationTimeMs);
 }
 
 

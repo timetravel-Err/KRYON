@@ -100,11 +100,12 @@ public:
 			std::to_string(udpPacket->GetSize()) +
 			" bytes");
 
-        ns3::Simulator::Schedule(
-            ns3::MilliSeconds(delayMs),
-            &AuthenticationTransport::DeliverRequest,
-            this,
-            packet);
+       ns3::Simulator::Schedule(
+    ns3::MilliSeconds(delayMs),
+    &AuthenticationTransport::DeliverRequest,
+    this,
+    udpPacket,
+    packet.requestId);
     }
 
     /* ------------------------------------------------------
@@ -128,21 +129,20 @@ public:
 
 private:
 
-  void DeliverRequest(AuthRequestPacket packet)
+ void DeliverRequest(
+    ns3::Ptr<ns3::Packet> udpPacket,
+    std::string requestId)
 {
     Logger::Info(
-			"[Transport] Delivered AuthRequestPacket (" +
-			packet.requestId + ")");
+        "[Transport] Delivered AuthRequestPacket (" +
+        requestId + ")");
 
-		//
-		// Phase 9
-		// Convert to an ns-3 packet
-		//
+    AuthRequestPacket decodedRequest =
+        AuthenticationMessageCodec::DecodeRequest(
+            udpPacket);
 
-		m_receiver.Receive(packet);
-	
+    m_receiver.Receive(decodedRequest);
 }
-
 private:
 
     const ExperimentConfig& m_config;
