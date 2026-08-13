@@ -118,21 +118,21 @@ void RecordEvent(const SecurityEvent& event)
 void ExecuteAuthentication(AuthenticationRequest request)
 {
     
-	SecurityEvent startEvent;
+	//SecurityEvent startEvent;
 
-	startEvent.type = SecurityEventType::AUTH_START;
+	//startEvent.type = SecurityEventType::AUTH_START;
 
-	RecordEvent(startEvent);
+	//RecordEvent(startEvent);
 
 	m_authentication.StartAuthentication(request);
     m_authentication.ProcessAuthentication();
 	const auto& result = m_context.security.authentication.results.back();
 	
-	SecurityEvent resultEvent;
+	//SecurityEvent resultEvent;
 
-	resultEvent.type = result.authenticated ? SecurityEventType::AUTH_SUCCESS : SecurityEventType::AUTH_FAILURE;
+	//resultEvent.type = result.authenticated ? SecurityEventType::AUTH_SUCCESS : SecurityEventType::AUTH_FAILURE;
 
-	RecordEvent(resultEvent);
+	//RecordEvent(resultEvent);
     Logger::Info(
     "Authenticated Drone " +
     std::to_string(request.sourceNodeId) +

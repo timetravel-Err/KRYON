@@ -1,0 +1,264 @@
+#ifndef KRYON_APPLICATION_ENGINE_H
+#define KRYON_APPLICATION_ENGINE_H
+
+/**
+ * ----------------------------------------------------------
+ * KRYON Research Framework
+ * ----------------------------------------------------------
+ * File : ApplicationEngine.h
+ *
+ * Description
+ * -----------
+ * Responsible for installing all application-layer
+ * traffic used during the simulation.
+ *
+ * Current Support
+ * ---------------
+ * • UDP Authentication Traffic
+ * • Drone → AV Requests
+ * • AV → Drone Responses
+ *
+ * Future Support
+ * --------------
+ * 
+ * • SLAP-IoAV
+ * • Multi-hop Protocols
+ * • Secure Routing
+ *
+ * Version : 0.1.0
+ * ----------------------------------------------------------
+ 
+	// 2PQS-IoAV Authentication & Key Agreement (AKA) traffic:
+    // - Drone sends mα = ⟨EIDα, VIDα, Tα, Cα⟩ = 6688 bits (836 bytes) to AV
+    // - AV replies mAV = ⟨EIDAV, SKVα−AV, TAV⟩ = 544 bits (68 bytes) to Drone
+    // - Total per exchange: 7232 bits (904 bytes)
+ */
+
+#include "../core/ExperimentConfig.h"
+#include "../simulation/SimulationContext.h"
+#include "../core/Logger.h"
+#include "ns3/applications-module.h"
+
+namespace kryon
+{
+
+class ApplicationEngine
+{
+public:
+
+    ApplicationEngine(const ExperimentConfig& config,
+                      SimulationContext& context)
+        : m_config(config),
+          m_context(context)
+    {
+    }
+
+   void Initialize()
+{
+    InstallServers();
+	
+	InstallClients();
+
+    Logger::Info("Application Engine initialized.");
+}
+private:
+
+    const ExperimentConfig& m_config;
+
+    SimulationContext& m_context;
+	
+void InstallServers()
+{
+    uint16_t requestPort = 9001;
+    uint16_t responsePort = 9002;
+
+    //
+    // UDP Servers on AVs
+    //
+    for (uint32_t a = 0; a < m_context.totalAVs; ++a)
+    {
+        ns3::Ipv4Address avIp =
+            m_context.avInterfaces.GetAddress(a);
+
+        Logger::Info(
+            "[Application] Installing AV UDP server | "
+            "AV=" +
+            std::to_string(a) +
+            " | Port=" +
+            std::to_string(requestPort) +
+            " | IP=" +
+            avIp.ToString());
+
+        ns3::UdpServerHelper avServer(requestPort);
+
+        ns3::ApplicationContainer app =
+            avServer.Install(m_context.avs.Get(a));
+
+        app.Start(ns3::Seconds(0.0));
+        app.Stop(ns3::Seconds(m_config.simTime));
+    }
+
+    //
+    // UDP Servers on Drones
+    //
+    for (uint32_t d = 0; d < m_context.totalDrones; ++d)
+    {
+        ns3::Ipv4Address droneIp =
+            m_context.droneInterfaces.GetAddress(d);
+
+        Logger::Info(
+            "[Application] Installing Drone UDP server | "
+            "Drone=" +
+            std::to_string(d) +
+            " | Port=" +
+            std::to_string(responsePort) +
+            " | IP=" +
+            droneIp.ToString());
+
+        ns3::UdpServerHelper droneServer(responsePort);
+
+        ns3::ApplicationContainer app =
+            droneServer.Install(m_context.drones.Get(d));
+
+        app.Start(ns3::Seconds(0.0));
+        app.Stop(ns3::Seconds(m_config.simTime));
+    }
+
+    Logger::Info("[Application] UDP servers installed.");
+}
+
+void InstallClients()
+{
+    uint16_t requestPort = 9001;
+    uint16_t responsePort = 9002;
+
+    for (uint32_t a = 0; a < m_context.totalAVs; ++a)
+    {
+        uint32_t targetDrone =
+            a % m_context.totalDrones;
+
+        ns3::Ipv4Address avIp =
+            m_context.avInterfaces.GetAddress(a);
+
+        ns3::Ipv4Address droneIp =
+            m_context.droneInterfaces.GetAddress(targetDrone);
+
+        //
+        // --------------------------------------------------
+        // Drone → AV
+        // --------------------------------------------------
+        //
+
+        Logger::Info(
+            "[Application] Installing Drone->AV client | "
+            "Drone=" +
+            std::to_string(targetDrone) +
+            " | AV=" +
+            std::to_string(a) +
+            " | DestinationIP=" +
+            avIp.ToString() +
+            " | Port=" +
+            std::to_string(requestPort) +
+            " | PacketSize=836");
+
+        ns3::UdpClientHelper droneClient(
+            avIp,
+            requestPort);
+
+        droneClient.SetAttribute(
+            "MaxPackets",
+            ns3::UintegerValue(0));
+
+        droneClient.SetAttribute(
+            "Interval",
+            ns3::TimeValue(
+                ns3::MilliSeconds(100)));
+
+        droneClient.SetAttribute(
+            "PacketSize",
+            ns3::UintegerValue(836));
+
+        ns3::ApplicationContainer droneApp =
+            droneClient.Install(
+                m_context.drones.Get(targetDrone));
+
+        double droneStart =
+            10.0 + 0.1 * a;
+
+        droneApp.Start(
+            ns3::Seconds(droneStart));
+
+        droneApp.Stop(
+            ns3::Seconds(m_config.simTime));
+
+        Logger::Info(
+            "[Application] Drone->AV client installed | "
+            "Start=" +
+            std::to_string(droneStart) +
+            " | Stop=" +
+            std::to_string(m_config.simTime));
+
+        //
+        // --------------------------------------------------
+        // AV → Drone
+        // --------------------------------------------------
+        //
+
+        Logger::Info(
+            "[Application] Installing AV->Drone client | "
+            "AV=" +
+            std::to_string(a) +
+            " | Drone=" +
+            std::to_string(targetDrone) +
+            " | DestinationIP=" +
+            droneIp.ToString() +
+            " | Port=" +
+            std::to_string(responsePort) +
+            " | PacketSize=68");
+
+        ns3::UdpClientHelper avClient(
+            droneIp,
+            responsePort);
+
+        avClient.SetAttribute(
+            "MaxPackets",
+            ns3::UintegerValue(0));
+
+        avClient.SetAttribute(
+            "Interval",
+            ns3::TimeValue(
+                ns3::MilliSeconds(100)));
+
+        avClient.SetAttribute(
+            "PacketSize",
+            ns3::UintegerValue(68));
+
+        ns3::ApplicationContainer avApp =
+            avClient.Install(
+                m_context.avs.Get(a));
+
+        double avStart =
+            10.5 + 0.1 * a;
+
+        avApp.Start(
+            ns3::Seconds(avStart));
+
+        avApp.Stop(
+            ns3::Seconds(m_config.simTime));
+
+        Logger::Info(
+            "[Application] AV->Drone client installed | "
+            "Start=" +
+            std::to_string(avStart) +
+            " | Stop=" +
+            std::to_string(m_config.simTime));
+    }
+
+    Logger::Info(
+        "[Application] UDP clients installed.");
+}
+};
+
+}
+
+#endif

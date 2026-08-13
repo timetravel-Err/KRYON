@@ -167,6 +167,11 @@ Logger::Info("============================================");
 		return m_manager;
 	}
 
+AuthenticationReceiver& GetAuthenticationReceiver()
+{
+    return m_receiver;
+}
+
 	void SetTransport(AuthenticationTransport* transport)
 {
     m_transport = transport;
