@@ -107,9 +107,16 @@ int main(int argc, char *argv[])
     config,
     context);
 	
+	communication.SetAuthenticationTransport(&transport);
+
+	
 	transport.GetDispatcher()
          .SetAuthenticationManager(
              &security.GetAuthenticationManager());
+	
+	
+	//m_dispatcher.SetAuthenticationManager(&m_manager);
+	//m_receiver.SetDispatcher(&m_dispatcher);
 	
 	kryon::AuthenticationScheduler scheduler(
     config,
@@ -138,6 +145,10 @@ int main(int argc, char *argv[])
 
 		metrics.RunSimulation();
 
+		/* ---------- Application Statistics ---------- */
+
+		application.PrintStatistics();
+		
 		metrics.Finalize();
 
 		metrics.ComputeMetrics();

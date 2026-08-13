@@ -32,7 +32,8 @@
 #include "ns3/wifi-module.h"
 #include "ns3/socket.h"
 #include "ns3/udp-socket-factory.h"
-
+#include <sstream>
+#include "../authentication/network/AuthenticationTransport.h"
 namespace kryon
 {
 
@@ -57,12 +58,23 @@ public:
 	
 	AssignIpv4Addresses();
 	
+	
+	
 	CreateSockets();
 	
     Logger::Info("Communication Engine initialized.");
 }
 
-		void SendUdpPacket(
+void SetAuthenticationTransport(
+    AuthenticationTransport* transport)
+{
+    m_authenticationTransport = transport;
+
+    Logger::Info(
+        "Communication Engine connected to Authentication Transport.");
+}
+
+	/*	void SendUdpPacket(
 			uint32_t sourceDrone,
 			uint32_t destinationVehicle,
 			ns3::Ptr<ns3::Packet> packet)
@@ -79,7 +91,63 @@ public:
 				std::to_string(sourceDrone) +
 				" to Vehicle " +
 				std::to_string(destinationVehicle));
-		}
+		}*/
+		
+void SendUdpPacket(
+    uint32_t sourceDrone,
+    uint32_t destinationVehicle,
+    ns3::Ptr<ns3::Packet> packet)
+{
+    int32_t droneIndex =
+        FindDroneIndexByNodeId(sourceDrone);
+
+    int32_t avIndex =
+        FindAvIndexByNodeId(destinationVehicle);
+
+    if (droneIndex < 0 || avIndex < 0)
+    {
+        Logger::Warning(
+            "Invalid authentication UDP endpoint: Drone Node " +
+            std::to_string(sourceDrone) +
+            ", AV Node " +
+            std::to_string(destinationVehicle));
+
+        return;
+    }
+
+    ns3::Ipv4Address destinationIp =
+        m_context.avInterfaces.GetAddress(
+            static_cast<uint32_t>(avIndex));
+
+   int sent =
+		m_context.droneSockets[
+			static_cast<uint32_t>(droneIndex)]
+			->SendTo(
+				packet,
+				0,
+				ns3::InetSocketAddress(
+					destinationIp,
+					9000));
+
+	if (sent < 0)
+	{
+		Logger::Warning(
+			"[Communication] UDP packet send FAILED.");
+	}
+
+    std::ostringstream ipStream;
+	ipStream << destinationIp;
+
+	Logger::Info(
+		"UDP packet sent from Drone " +
+		std::to_string(sourceDrone) +
+		" to Vehicle " +
+		std::to_string(destinationVehicle) +
+		" | Destination IP = " +
+		ipStream.str() +
+		" | Bytes = " +
+		std::to_string(packet->GetSize()));
+}
 
 private:
 
@@ -187,6 +255,34 @@ void AssignIpv4Addresses()
 
     Logger::Info("IPv4 addresses assigned.");
 }
+
+
+int32_t FindDroneIndexByNodeId(uint32_t nodeId)
+{
+    for (uint32_t i = 0; i < m_context.drones.GetN(); ++i)
+    {
+        if (m_context.drones.Get(i)->GetId() == nodeId)
+        {
+            return static_cast<int32_t>(i);
+        }
+    }
+
+    return -1;
+}
+
+int32_t FindAvIndexByNodeId(uint32_t nodeId)
+{
+    for (uint32_t i = 0; i < m_context.avs.GetN(); ++i)
+    {
+        if (m_context.avs.Get(i)->GetId() == nodeId)
+        {
+            return static_cast<int32_t>(i);
+        }
+    }
+
+    return -1;
+}
+
 void CreateSockets()
 {
     //
@@ -240,28 +336,80 @@ void CreateSockets()
     Logger::Info("UDP sockets created.");
 }
 
-	void ReceivePacket(ns3::Ptr<ns3::Socket> socket)
+void ReceivePacket(ns3::Ptr<ns3::Socket> socket)
 {
     while (ns3::Ptr<ns3::Packet> packet = socket->Recv())
     {
-        /*Logger::Info(
-            "UDP packet received (" +
-            std::to_string(packet->GetSize()) +
-            " bytes)");*/
-			
-			static uint32_t counter = 0;
+        uint32_t packetSize = packet->GetSize();
 
-			counter++;
+        /*
+         * Get the local address/port on which this
+         * socket received the packet.
+         */
+        ns3::Address localAddress;
 
-			if (counter % 100 == 0)
-			{
-				Logger::Info(
-					"Total UDP packets received = " +
-					std::to_string(counter));
-			}
+        if (socket->GetSockName(localAddress) < 0)
+        {
+            Logger::Warning(
+                "[Communication] Unable to determine local socket address.");
+
+            continue;
+        }
+
+        uint16_t localPort = 0;
+
+        if (ns3::InetSocketAddress::IsMatchingType(localAddress))
+        {
+            ns3::InetSocketAddress inetAddress =
+                ns3::InetSocketAddress::ConvertFrom(localAddress);
+
+            localPort = inetAddress.GetPort();
+        }
+
+        Logger::Info(
+            "[Communication] UDP packet received | Bytes = " +
+            std::to_string(packetSize) +
+            " | Local Port = " +
+            std::to_string(localPort));
+
+        /*
+         * Authentication traffic.
+         *
+         * KRYON authentication uses UDP port 9000.
+         */
+        if (localPort == 9000)
+        {
+            if (m_authenticationTransport != nullptr)
+            {
+                m_authenticationTransport->ReceiveUdpPacket(packet);
+            }
+
+            continue;
+        }
+
+        /*
+         * Application traffic.
+         *
+         * 9001 = Drone -> AV application traffic
+         * 9002 = AV -> Drone application traffic
+         */
+        if (localPort == 9001 ||
+            localPort == 9002)
+        {
+            Logger::Info(
+                "[Communication] Application UDP packet received.");
+
+            continue;
+        }
+
+        /*
+         * Unknown UDP traffic.
+         */
+        Logger::Warning(
+            "[Communication] Unknown UDP destination port: " +
+            std::to_string(localPort));
     }
 }
-
 void InitializeSockets()
 {
     Logger::Info("Initializing UDP sockets.");
@@ -278,6 +426,8 @@ ns3::YansWifiPhyHelper wifiPhy;
 std::vector<ns3::Ptr<ns3::Socket>> m_droneSockets;
 
 std::vector<ns3::Ptr<ns3::Socket>> m_vehicleSockets;
+
+AuthenticationTransport* m_authenticationTransport = nullptr;
 
 };
 

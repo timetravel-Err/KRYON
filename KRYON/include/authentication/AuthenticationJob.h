@@ -18,21 +18,19 @@ struct AuthenticationJob
 
     double nextEventTime = 0.0;
 	
-	/*
-	 * Current RAP protocol step
-	 *
-	 * 0 -> Not started
-	 * 1 -> Message 1
-	 * 2 -> Message 2
-	 * 3 -> Message 3
-	 * 4 -> Key Agreement
-	 * 5 -> Session Established
-	 */
-	 
-	/*
-	 * Total RAP protocol steps
-	 */
-	uint32_t totalSteps = 5; 
+			/*
+			* Scheduler-level authentication stages.
+			 *
+			 * The scheduler tracks the authentication transaction,
+			 * while RAPAuthenticationProtocol owns the internal
+			 * protocol message sequence.
+			 *
+			 * 0 -> Authentication not started
+			 * 1 -> Authentication request transmitted
+			 * 2 -> Authentication completed
+			 */
+			uint32_t totalSteps = 2;
+	
 	
 	uint32_t currentStep = 0;
 

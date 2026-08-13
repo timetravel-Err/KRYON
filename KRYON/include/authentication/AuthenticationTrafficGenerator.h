@@ -29,6 +29,14 @@ public:
 
     void GenerateTraffic(double intervalSeconds)
     {
+		 /*
+		 * Authentication start-time generation is currently
+		 * randomized across the simulation.
+		 *
+		 * intervalSeconds is retained for the next traffic-model
+		 * phase, where periodic authentication will be implemented.
+		 */
+		(void)intervalSeconds;
 
         for (uint32_t d = 0; d < m_context.totalDrones; ++d)
         {
