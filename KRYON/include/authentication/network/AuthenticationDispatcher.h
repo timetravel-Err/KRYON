@@ -16,26 +16,26 @@ namespace kryon
 {
 
 
-	inline std::string PacketTypeToString(AuthenticationPacketType type)
-	{
-		switch (type)
-		{
-			case AuthenticationPacketType::AUTH_REQUEST:
-				return "AUTH_REQUEST";
+inline std::string PacketTypeToString(AuthenticationPacketType type)
+{
+    switch (type)
+    {
+        case AuthenticationPacketType::AUTH_REQUEST:
+            return "AUTH_REQUEST";
 
-			case AuthenticationPacketType::AUTH_CHALLENGE:
-				return "AUTH_CHALLENGE";
+        case AuthenticationPacketType::AUTH_CHALLENGE:
+            return "AUTH_CHALLENGE";
 
-			case AuthenticationPacketType::AUTH_RESPONSE:
-				return "AUTH_RESPONSE";
+        case AuthenticationPacketType::AUTH_RESPONSE:
+            return "AUTH_RESPONSE";
 
-			case AuthenticationPacketType::AUTH_CONFIRM:
-				return "AUTH_CONFIRM";
+        case AuthenticationPacketType::AUTH_CONFIRM:
+            return "AUTH_CONFIRM";
 
-			default:
-				return "UNKNOWN";
-		}
-	}
+        default:
+            return "UNKNOWN";
+    }
+}
 
 
 class AuthenticationDispatcher
@@ -79,28 +79,46 @@ void SetAuthenticationManager(AuthenticationManager* manager)
 				}
 
 			case AuthenticationPacketType::AUTH_CHALLENGE:
-
+			{
 				Logger::Info(
 					"[Dispatcher] Routing AUTH_CHALLENGE : " +
 					packet.requestId);
 
+				const AuthChallengePacket& challenge =
+					static_cast<const AuthChallengePacket&>(packet);
+
+				m_manager->ProcessAuthenticationChallenge(challenge);
+
 				break;
+			}
 
 			case AuthenticationPacketType::AUTH_RESPONSE:
-
+			{
 				Logger::Info(
 					"[Dispatcher] Routing AUTH_RESPONSE : " +
 					packet.requestId);
 
+				const AuthResponsePacket& response =
+					static_cast<const AuthResponsePacket&>(packet);
+
+				m_manager->ProcessAuthenticationResponse(response);
+
 				break;
+			}
 
 			case AuthenticationPacketType::AUTH_CONFIRM:
-
+			{
 				Logger::Info(
 					"[Dispatcher] Routing AUTH_CONFIRM : " +
 					packet.requestId);
 
+				const AuthConfirmPacket& confirm =
+					static_cast<const AuthConfirmPacket&>(packet);
+
+				m_manager->ProcessAuthenticationConfirm(confirm);
+
 				break;
+			}
 
 			default:
 

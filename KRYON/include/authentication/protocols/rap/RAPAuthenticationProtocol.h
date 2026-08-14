@@ -38,6 +38,10 @@
 #include <algorithm>
 #include "../../../crypto/CryptoEngine.h"
 #include "../../../crypto/CryptoTypes.h"
+#include "../../packets/AuthRequestPacket.h"
+#include "../../packets/AuthChallengePacket.h"
+#include "../../packets/AuthResponsePacket.h"
+#include "../../packets/AuthConfirmPacket.h"
 
 namespace kryon
 {
@@ -60,10 +64,31 @@ public:
 
 void Initialize() override
 {
-    Logger::Info("RAP Authentication Protocol initialized.");
+    Logger::Info(
+        "RAP Authentication Protocol initialized.");
+
+    if (m_crypto == nullptr)
+    {
+        Logger::Warning(
+            "[RAP] CryptoEngine not available during initialization.");
+        return;
+    }
+
+    Logger::Info(
+        "[RAP] Generating Drone ECC key pair.");
+
+    m_droneKeys =
+        m_crypto->GenerateKeyPair();
+
+    Logger::Info(
+        "[RAP] Generating Vehicle ECC key pair.");
+
+    m_vehicleKeys =
+        m_crypto->GenerateKeyPair();
 }
 
-    AuthenticationResult Authenticate(
+
+AuthenticationResult Authenticate(
     const AuthenticationRequest& request) override
 {
 	
@@ -241,12 +266,203 @@ else
         Logger::Info("RAP  Authentication Protocol finalized.");
     }
 
-    std::string GetProtocolName() const override
+       std::string GetProtocolName() const override
     {
         return "Reference Authentication Protocol (RAP)";
     }
-	
+
+
+    AuthChallengePacket ProcessRequest(
+        const AuthRequestPacket& packet) override
+    {
+        Logger::Info(
+            "[RAP] Processing AUTH_REQUEST : " +
+            packet.requestId);
+
+        AuthenticationRequest request;
+
+        request.requestId =
+            packet.requestId;
+
+        request.sourceNodeId =
+            packet.sourceNode;
+
+        request.destinationNodeId =
+            packet.destinationNode;
+
+        request.timestamp =
+            packet.timestamp;
+
+        AuthenticationChallenge challenge =
+            GenerateChallenge(request);
+
+        AuthChallengePacket challengePacket;
+
+        challengePacket.requestId =
+            challenge.requestId;
+
+        challengePacket.sourceNode =
+            challenge.sourceNodeId;
+
+        challengePacket.destinationNode =
+            challenge.destinationNodeId;
+
+        challengePacket.timestamp =
+            challenge.timestamp;
+
+        challengePacket.challenge =
+            challenge.challenge;
+
+        challengePacket.senderPublicKey =
+            challenge.senderPublicKey.bytes.data;
+
+        challengePacket.signature =
+            challenge.signature.bytes.data;
+
+        return challengePacket;
+    }
+
+
+    AuthResponsePacket ProcessChallenge(
+        const AuthChallengePacket& packet) override
+    {
+        Logger::Info(
+            "[RAP] Processing AUTH_CHALLENGE : " +
+            packet.requestId);
+
+        AuthenticationRequest request;
+
+        request.requestId =
+            packet.requestId;
+
+        request.sourceNodeId =
+            packet.destinationNode;
+
+        request.destinationNodeId =
+            packet.sourceNode;
+
+        request.timestamp =
+            packet.timestamp;
+
+        AuthenticationChallenge challenge;
+
+        challenge.requestId =
+            packet.requestId;
+
+        challenge.sourceNodeId =
+            packet.sourceNode;
+
+        challenge.destinationNodeId =
+            packet.destinationNode;
+
+        challenge.timestamp =
+            packet.timestamp;
+
+        challenge.challenge =
+            packet.challenge;
+
+        challenge.senderPublicKey.bytes.data =
+            packet.senderPublicKey;
+
+        challenge.signature.bytes.data =
+            packet.signature;
+
+        AuthenticationResponse response =
+            GenerateResponse(
+                request,
+                challenge);
+
+        AuthResponsePacket responsePacket;
+
+        responsePacket.requestId =
+            response.requestId;
+
+        responsePacket.sourceNode =
+            request.sourceNodeId;
+
+        responsePacket.destinationNode =
+            request.destinationNodeId;
+
+        responsePacket.timestamp =
+            response.timestamp;
+
+        responsePacket.challenge =
+            response.challenge;
+
+        responsePacket.proof =
+            response.proof;
+
+        responsePacket.senderPublicKey =
+            response.senderPublicKey.bytes.data;
+
+        responsePacket.signature =
+            response.signature.bytes.data;
+
+        return responsePacket;
+    }
+
+
+    AuthConfirmPacket ProcessResponse(
+        const AuthResponsePacket& packet) override
+    {
+        Logger::Info(
+            "[RAP] Processing AUTH_RESPONSE : " +
+            packet.requestId);
+
+        AuthenticationResponse response;
+
+        response.requestId =
+            packet.requestId;
+
+        response.responderNodeId =
+            packet.sourceNode;
+
+        response.timestamp =
+            packet.timestamp;
+
+        response.challenge =
+            packet.challenge;
+
+        response.proof =
+            packet.proof;
+
+        response.senderPublicKey.bytes.data =
+            packet.senderPublicKey;
+
+        response.signature.bytes.data =
+            packet.signature;
+
+        bool verified =
+            VerifyResponse(response);
+
+        AuthConfirmPacket confirmPacket;
+
+        confirmPacket.requestId =
+            packet.requestId;
+
+        confirmPacket.sourceNode =
+            packet.destinationNode;
+
+        confirmPacket.destinationNode =
+            packet.sourceNode;
+
+        confirmPacket.timestamp =
+            packet.timestamp;
+
+        confirmPacket.authenticationSuccessful =
+            verified;
+
+        confirmPacket.message =
+            verified ?
+            "RAP authentication successful." :
+            "RAP authentication failed.";
+
+        return confirmPacket;
+    }
+
+
 private:
+	
 
 	AuthenticationChallenge GenerateChallenge(
     const AuthenticationRequest& request)
@@ -366,58 +582,57 @@ Logger::Info(
 bool VerifyResponse(
     const AuthenticationResponse& response)
 {
-    (void)response;
+    Logger::Info(
+        "Verifying SHA-256 proof.");
+
+    ByteArray message;
+    message.data = response.challenge;
 
     Logger::Info(
-    "Verifying SHA-256 proof.");
-	
-	Logger::Info("Authentication Result : SUCCESS");
+        "Verifying Drone signature.");
 
-   ByteArray message;
+    m_droneAuthenticated =
+        m_crypto->Verify(
+            message,
+            response.signature,
+            response.senderPublicKey);
 
-message.data = response.challenge;
+    if (!m_droneAuthenticated)
+    {
+        Logger::Info(
+            "Drone signature verification FAILED.");
 
-Logger::Info(
-    "Verifying Drone signature.");
+        return false;
+    }
 
-m_droneAuthenticated =
-    m_crypto->Verify(
-        message,
-        response.signature,
-        response.senderPublicKey);
-
-if (!m_droneAuthenticated)
-{
     Logger::Info(
-        "Drone signature verification FAILED.");
+        "Drone successfully authenticated.");
 
-    return false;
+    HashValue expected =
+        m_crypto->ComputeHash(message);
+
+    m_proofVerified =
+        (expected.bytes.data == response.proof);
+
+    if (m_proofVerified)
+    {
+        Logger::Info(
+            "Challenge proof verified.");
+
+        Logger::Info(
+            "Authentication Result : SUCCESS");
+    }
+    else
+    {
+        Logger::Info(
+            "Challenge proof verification FAILED.");
+
+        Logger::Info(
+            "Authentication Result : FAILED");
+    }
+
+    return m_proofVerified;
 }
-
-Logger::Info(
-    "Drone successfully authenticated.");
-
-HashValue expected =
-    m_crypto->ComputeHash(message);
-
-
-m_proofVerified =
-    (expected.bytes.data == response.proof);
-
-if (m_proofVerified)
-{
-    Logger::Info(
-        "Challenge proof verified.");
-}
-else
-{
-    Logger::Info(
-        "Challenge proof verification FAILED.");
-}
-
-return m_proofVerified;
-}
-
 
 
 
@@ -472,32 +687,28 @@ AuthenticationResult BuildResult(
     "RAP authentication successful." :
     "RAP authentication failed.";
 		
-		/*
-	 * Session information.
-	 */
-	result.sessionKey =
-		m_droneSessionKey;
-
-	result.sessionLifetime = 3.0;
+	
 
 return result;
 
 }
-private:
+
+
 
     CryptoEngine* m_crypto = nullptr;
-	
-	KeyPair m_droneKeys;
-	KeyPair m_vehicleKeys;
 
-	SharedSecret m_droneSecret;
-	SharedSecret m_vehicleSecret;
-	SessionKey m_droneSessionKey;
-	SessionKey m_vehicleSessionKey;
+    KeyPair m_droneKeys;
+    KeyPair m_vehicleKeys;
+
+    SharedSecret m_droneSecret;
+    SharedSecret m_vehicleSecret;
+
+    SessionKey m_droneSessionKey;
+    SessionKey m_vehicleSessionKey;
+
     bool m_vehicleAuthenticated = false;
-	bool m_droneAuthenticated = false;
-	bool m_proofVerified = false;
-	
+    bool m_droneAuthenticated = false;
+    bool m_proofVerified = false;
 };
 
 

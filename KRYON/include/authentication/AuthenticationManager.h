@@ -28,6 +28,9 @@
 #include "SessionManager.h"
 
 #include "packets/AuthRequestPacket.h"
+#include "packets/AuthChallengePacket.h"
+#include "packets/AuthResponsePacket.h"
+#include "packets/AuthConfirmPacket.h"
 #include <functional>
 
 namespace kryon
@@ -121,6 +124,29 @@ void ProcessAuthenticationRequest(
     Authenticate(request);
 }
 
+void ProcessAuthenticationChallenge(
+    const AuthChallengePacket& packet)
+{
+    Logger::Info(
+        "[AuthenticationManager] Received AUTH_CHALLENGE : " +
+        packet.requestId);
+}
+
+void ProcessAuthenticationResponse(
+    const AuthResponsePacket& packet)
+{
+    Logger::Info(
+        "[AuthenticationManager] Received AUTH_RESPONSE : " +
+        packet.requestId);
+}
+
+void ProcessAuthenticationConfirm(
+    const AuthConfirmPacket& packet)
+{
+    Logger::Info(
+        "[AuthenticationManager] Received AUTH_CONFIRM : " +
+        packet.requestId);
+}
 
 AuthenticationResult Authenticate(
     const AuthenticationRequest& request)

@@ -34,6 +34,11 @@
 #include "AuthenticationRequest.h"
 #include "AuthenticationResult.h"
 #include "../crypto/CryptoEngine.h"
+#include "packets/AuthRequestPacket.h"
+#include "packets/AuthChallengePacket.h"
+#include "packets/AuthResponsePacket.h"
+#include "packets/AuthConfirmPacket.h"
+
 namespace kryon
 {
 
@@ -43,25 +48,22 @@ public:
 
     virtual ~IAuthenticationProtocol() = default;
 
-    /**
-     * Initialize protocol resources.
-     */
     virtual void Initialize() = 0;
-	//virtual void Initialize( CryptoEngine& crypto) = 0;
-    /**
-     * Execute one authentication operation.
-     */
+
     virtual AuthenticationResult Authenticate(
         const AuthenticationRequest& request) = 0;
 
-    /**
-     * Release protocol resources.
-     */
+    virtual AuthChallengePacket ProcessRequest(
+        const AuthRequestPacket& packet) = 0;
+
+    virtual AuthResponsePacket ProcessChallenge(
+        const AuthChallengePacket& packet) = 0;
+
+    virtual AuthConfirmPacket ProcessResponse(
+        const AuthResponsePacket& packet) = 0;
+
     virtual void Finalize() = 0;
 
-    /**
-     * Return protocol name.
-     */
     virtual std::string GetProtocolName() const = 0;
 };
 

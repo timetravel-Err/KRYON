@@ -36,6 +36,7 @@
 #include "../simulation/SimulationContext.h"
 #include "../core/Logger.h"
 #include "CryptoTypes.h"
+#include "HashEngine.h"
 #include <openssl/evp.h>
 #include <openssl/x509.h>
 #include <openssl/ec.h>
@@ -64,33 +65,245 @@ public:
         Logger::Info("ECC Engine initialized.");
     }
 
-    /* ------------------------------------------------------
-     * Sign Message
-     * ------------------------------------------------------*/
+/* ------------------------------------------------------
+ * Sign Message using ECDSA / SHA-256
+ * ------------------------------------------------------*/
 
-    Signature Sign(const ByteArray& message,
-                   const PrivateKey&)
+Signature Sign(const ByteArray& message,
+               const PrivateKey& privateKey)
+{
+    Signature signature;
+
+    if (privateKey.bytes.data.empty())
     {
-        Signature signature;
-
-        // Placeholder implementation
+        Logger::Info(
+            "ECDSA signing failed: empty private key.");
 
         return signature;
     }
 
-    /* ------------------------------------------------------
-     * Verify Signature
-     * ------------------------------------------------------*/
+    const unsigned char* keyPtr =
+        privateKey.bytes.data.data();
 
-    bool Verify(const ByteArray&,
-                const Signature&,
-                const PublicKey&)
+    EVP_PKEY* pkey =
+        d2i_AutoPrivateKey(
+            nullptr,
+            &keyPtr,
+            privateKey.bytes.data.size());
+
+    if (!pkey)
     {
-        // Placeholder implementation
+        Logger::Info(
+            "ECDSA signing failed: unable to import private key.");
+
+        return signature;
+    }
+
+    EVP_MD_CTX* mdctx =
+        EVP_MD_CTX_new();
+
+    if (!mdctx)
+    {
+        EVP_PKEY_free(pkey);
+
+        Logger::Info(
+            "ECDSA signing failed: unable to create digest context.");
+
+        return signature;
+    }
+
+    if (EVP_DigestSignInit(
+            mdctx,
+            nullptr,
+            EVP_sha256(),
+            nullptr,
+            pkey) <= 0)
+    {
+        Logger::Info(
+            "ECDSA signing initialization failed.");
+
+        EVP_MD_CTX_free(mdctx);
+        EVP_PKEY_free(pkey);
+
+        return signature;
+    }
+
+    if (EVP_DigestSignUpdate(
+            mdctx,
+            message.data.data(),
+            message.data.size()) <= 0)
+    {
+        Logger::Info(
+            "ECDSA signing update failed.");
+
+        EVP_MD_CTX_free(mdctx);
+        EVP_PKEY_free(pkey);
+
+        return signature;
+    }
+
+    size_t signatureLength = 0;
+
+    if (EVP_DigestSignFinal(
+            mdctx,
+            nullptr,
+            &signatureLength) <= 0)
+    {
+        Logger::Info(
+            "ECDSA signature size determination failed.");
+
+        EVP_MD_CTX_free(mdctx);
+        EVP_PKEY_free(pkey);
+
+        return signature;
+    }
+
+    signature.bytes.data.resize(signatureLength);
+
+    if (EVP_DigestSignFinal(
+            mdctx,
+            signature.bytes.data.data(),
+            &signatureLength) <= 0)
+    {
+        signature.bytes.data.clear();
+
+        Logger::Info(
+            "ECDSA signature generation failed.");
+    }
+    else
+    {
+        signature.bytes.data.resize(signatureLength);
+
+        Logger::Info(
+            "ECDSA signature generated.");
+
+        Logger::Info(
+            "Signature Size : " +
+            std::to_string(signatureLength) +
+            " bytes");
+    }
+
+    EVP_MD_CTX_free(mdctx);
+    EVP_PKEY_free(pkey);
+
+    return signature;
+}
+
+
+/* ------------------------------------------------------
+ * Verify ECDSA Signature using SHA-256
+ * ------------------------------------------------------*/
+
+bool Verify(const ByteArray& message,
+            const Signature& signature,
+            const PublicKey& publicKey)
+{
+    if (publicKey.bytes.data.empty())
+    {
+        Logger::Info(
+            "ECDSA verification failed: empty public key.");
+
+        return false;
+    }
+
+    if (signature.bytes.data.empty())
+    {
+        Logger::Info(
+            "ECDSA verification failed: empty signature.");
+
+        return false;
+    }
+
+    const unsigned char* keyPtr =
+        publicKey.bytes.data.data();
+
+    EVP_PKEY* pkey =
+        d2i_PUBKEY(
+            nullptr,
+            &keyPtr,
+            publicKey.bytes.data.size());
+
+    if (!pkey)
+    {
+        Logger::Info(
+            "ECDSA verification failed: unable to import public key.");
+
+        return false;
+    }
+
+    EVP_MD_CTX* mdctx =
+        EVP_MD_CTX_new();
+
+    if (!mdctx)
+    {
+        EVP_PKEY_free(pkey);
+
+        Logger::Info(
+            "ECDSA verification failed: unable to create digest context.");
+
+        return false;
+    }
+
+    if (EVP_DigestVerifyInit(
+            mdctx,
+            nullptr,
+            EVP_sha256(),
+            nullptr,
+            pkey) <= 0)
+    {
+        Logger::Info(
+            "ECDSA verification initialization failed.");
+
+        EVP_MD_CTX_free(mdctx);
+        EVP_PKEY_free(pkey);
+
+        return false;
+    }
+
+    if (EVP_DigestVerifyUpdate(
+            mdctx,
+            message.data.data(),
+            message.data.size()) <= 0)
+    {
+        Logger::Info(
+            "ECDSA verification update failed.");
+
+        EVP_MD_CTX_free(mdctx);
+        EVP_PKEY_free(pkey);
+
+        return false;
+    }
+
+    int verificationResult =
+        EVP_DigestVerifyFinal(
+            mdctx,
+            signature.bytes.data.data(),
+            signature.bytes.data.size());
+
+    EVP_MD_CTX_free(mdctx);
+    EVP_PKEY_free(pkey);
+
+    if (verificationResult == 1)
+    {
+        Logger::Info(
+            "ECDSA signature verification successful.");
 
         return true;
     }
 
+    if (verificationResult == 0)
+    {
+        Logger::Info(
+            "ECDSA signature verification FAILED.");
+
+        return false;
+    }
+
+    Logger::Info(
+        "ECDSA signature verification encountered an error.");
+
+    return false;
+}
     /* ------------------------------------------------------
      * Derive Shared Secret
      * ------------------------------------------------------*/
