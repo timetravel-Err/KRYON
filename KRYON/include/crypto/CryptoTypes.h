@@ -7,23 +7,11 @@
  * ----------------------------------------------------------
  * File : CryptoTypes.h
  *
- * Description
- * -----------
- * Common cryptographic data structures shared across the
- * framework.
+ * Common cryptographic data structures shared across
+ * the framework.
  *
- * This file intentionally contains only data types and no
- * cryptographic algorithms.
- *
- * Future engines (Hash, ECC, Random, PQC, etc.) operate on
- * these structures.
- *
- * Design Philosophy
- * -----------------
- * - No cryptographic implementation
- * - No OpenSSL/Crypto++ dependencies
- * - Strongly typed cryptographic objects
- * - Easy replacement of algorithms
+ * This file contains data types only.
+ * Cryptographic implementations remain inside crypto engines.
  * ----------------------------------------------------------
  */
 
@@ -35,7 +23,7 @@ namespace kryon
 
 /* ----------------------------------------------------------
  * Generic Byte Container
- * ----------------------------------------------------------*/
+ * ---------------------------------------------------------- */
 
 struct ByteArray
 {
@@ -44,7 +32,7 @@ struct ByteArray
 
 /* ----------------------------------------------------------
  * Hash Value
- * ----------------------------------------------------------*/
+ * ---------------------------------------------------------- */
 
 struct HashValue
 {
@@ -53,7 +41,7 @@ struct HashValue
 
 /* ----------------------------------------------------------
  * Public Key
- * ----------------------------------------------------------*/
+ * ---------------------------------------------------------- */
 
 struct PublicKey
 {
@@ -62,7 +50,7 @@ struct PublicKey
 
 /* ----------------------------------------------------------
  * Private Key
- * ----------------------------------------------------------*/
+ * ---------------------------------------------------------- */
 
 struct PrivateKey
 {
@@ -71,7 +59,7 @@ struct PrivateKey
 
 /* ----------------------------------------------------------
  * Key Pair
- * ----------------------------------------------------------*/
+ * ---------------------------------------------------------- */
 
 struct KeyPair
 {
@@ -81,7 +69,7 @@ struct KeyPair
 
 /* ----------------------------------------------------------
  * Shared Secret
- * ----------------------------------------------------------*/
+ * ---------------------------------------------------------- */
 
 struct SharedSecret
 {
@@ -90,30 +78,88 @@ struct SharedSecret
 
 /* ----------------------------------------------------------
  * Session Key
- * ----------------------------------------------------------*/
+ * ---------------------------------------------------------- */
 
 struct SessionKey
 {
     ByteArray bytes;
 };
-/* ----------------------------------------------------------
- * Digital Signature
- * ----------------------------------------------------------*/
 
-struct Signature
+/* ----------------------------------------------------------
+ * AES-GCM Nonce
+ * ---------------------------------------------------------- */
+
+struct GCMNonce
 {
     ByteArray bytes;
 };
 
 /* ----------------------------------------------------------
  * Nonce
- * ----------------------------------------------------------*/
+ *
+ * Used by the generic Ciphertext structure.
+ * ---------------------------------------------------------- */
 
 struct Nonce
 {
     ByteArray bytes;
 };
 
+/* ----------------------------------------------------------
+ * AES-GCM Authentication Tag
+ * ---------------------------------------------------------- */
+
+struct AuthenticationTag
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * Generic Ciphertext
+ *
+ * Contains:
+ *
+ *   bytes -> encrypted payload
+ *   nonce -> AES-GCM nonce / IV
+ *   tag   -> AES-GCM authentication tag
+ *
+ * This structure is used directly by
+ * SymmetricCryptoEngine.
+ * ---------------------------------------------------------- */
+
+struct Ciphertext
+{
+    ByteArray bytes;
+
+    Nonce nonce;
+
+    AuthenticationTag tag;
+};
+
+/* ----------------------------------------------------------
+ * AES-GCM Encryption Result
+ *
+ * Kept as a higher-level wrapper for future use.
+ * ---------------------------------------------------------- */
+
+struct AEADCiphertext
+{
+    Ciphertext ciphertext;
+
+    GCMNonce nonce;
+
+    AuthenticationTag tag;
+};
+
+/* ----------------------------------------------------------
+ * Digital Signature
+ * ---------------------------------------------------------- */
+
+struct Signature
+{
+    ByteArray bytes;
+};
+
 } // namespace kryon
 
-#endif
+#endif // KRYON_CRYPTO_TYPES_H

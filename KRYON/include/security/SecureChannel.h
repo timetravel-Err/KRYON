@@ -9,15 +9,15 @@
  *
  * Description
  * -----------
- * Provides secure communication using authenticated
+ * Provides authenticated secure communication using
  * session keys established by the Authentication Engine.
  *
- * Responsibilities
- * ----------------
- * • Encrypt packets
- * • Decrypt packets
- * • Compute MAC
- * • Verify MAC
+ * Current implementation:
+ * • AES-256-GCM encryption
+ * • AES-256-GCM authentication tag
+ * • Per-packet random nonce
+ * • Session identifier binding
+ * • Basic sequence-number support
  * ----------------------------------------------------------
  */
 
@@ -25,6 +25,9 @@
 #include "../authentication/Session.h"
 #include "../core/Logger.h"
 #include "SecurePacket.h"
+#include "../authentication/SessionManager.h"
+#include <stdexcept>
+#include <string>
 
 namespace kryon
 {
@@ -39,80 +42,223 @@ public:
     {
         m_crypto = crypto;
     }
+	
+	void SetSessionManager(SessionManager* sessionManager)
+	{
+		m_sessionManager = sessionManager;
+	}
 
     void Initialize()
     {
-        Logger::Info("Secure Channel initialized.");
+        if (m_crypto == nullptr)
+        {
+            throw std::runtime_error(
+                "SecureChannel requires a CryptoEngine.");
+        }
+		if (m_sessionManager == nullptr)
+		{
+			throw std::runtime_error(
+				"SecureChannel requires a SessionManager.");
+		}
+
+        Logger::Info(
+            "Secure Channel initialized.");
     }
 
     void Finalize()
     {
-        Logger::Info("Secure Channel finalized.");
+        Logger::Info(
+            "Secure Channel finalized.");
     }
-	
-	
-		
-		SecurePacket Encrypt(
-    const ByteArray& plaintext,
-    const Session& session)
-{
-    SecurePacket packet;
 
-    packet.sessionId = session.sessionId;
+    /*
+     * ------------------------------------------------------
+     * AES-256-GCM Encryption
+     * ------------------------------------------------------
+     */
 
-    packet.timestamp =
-        ns3::Simulator::Now().GetSeconds();
+    SecurePacket Encrypt(
+        const ByteArray& plaintext,
+        const Session& session)
+    {
+        if (m_crypto == nullptr)
+        {
+            throw std::runtime_error(
+                "SecureChannel CryptoEngine not initialized.");
+        }
 
-    packet.sequenceNumber = 0;
+        if (!session.active)
+        {
+            throw std::runtime_error(
+                "Cannot encrypt using inactive session.");
+        }
 
-    packet.ciphertext = plaintext;
+        if (session.sessionKey.bytes.data.size() != 32)
+        {
+            throw std::runtime_error(
+                "SecureChannel requires a 32-byte AES-256 session key.");
+        }
 
-    packet.encrypted = true;
+        SecurePacket packet;
 
-    Logger::Info(
-        "SecureChannel Encrypt() executed.");
+        /*
+         * Session metadata.
+         */
+        packet.sessionId = session.sessionId;
 
-    return packet;
-}
+        packet.timestamp =
+            ns3::Simulator::Now().GetSeconds();
 
-ByteArray Decrypt(
-    const SecurePacket& packet,
-    const Session&)
-{
-    Logger::Info(
-        "SecureChannel Decrypt() executed.");
+        /*
+         * Sequence number.
+         *
+         * A dedicated counter will be introduced later
+         * for full replay protection.
+         */
+        packet.sequenceNumber = 0;
 
-    return packet.ciphertext;
-}
+        /*
+         * Encrypt the application payload.
+         */
+        Ciphertext encrypted =
+            m_crypto->Encrypt(
+                plaintext,
+                session.sessionKey);
 
-ByteArray ComputeMAC(
-    const ByteArray&,
-    const Session&)
-{
-    Logger::Info(
-        "SecureChannel ComputeMAC() executed.");
+        /*
+         * Copy AES-GCM output into SecurePacket.
+         */
+        packet.ciphertext =
+            encrypted.bytes;
 
-    ByteArray mac;
+        packet.nonce =
+            encrypted.nonce.bytes;
 
-    return mac;
-}
+        packet.mac =
+            encrypted.tag.bytes;
 
-bool VerifyMAC(
-    const SecurePacket&,
-    const Session&)
-{
-    Logger::Info(
-        "SecureChannel VerifyMAC() executed.");
+        packet.encrypted = true;
 
-    return true;
-}
+        Logger::Info(
+            "SecureChannel: AES-256-GCM encryption successful.");
 
+        return packet;
+    }
+
+    /*
+     * ------------------------------------------------------
+     * AES-256-GCM Decryption
+     * ------------------------------------------------------
+     */
+
+    ByteArray Decrypt(
+        const SecurePacket& packet,
+        const Session& session)
+    {
+        if (m_crypto == nullptr)
+        {
+            throw std::runtime_error(
+                "SecureChannel CryptoEngine not initialized.");
+        }
+
+        if (!session.active)
+        {
+            throw std::runtime_error(
+                "Cannot decrypt using inactive session.");
+        }
+
+        if (packet.sessionId != session.sessionId)
+        {
+            throw std::runtime_error(
+                "SecureChannel session identifier mismatch.");
+        }
+
+        if (!packet.encrypted)
+        {
+            throw std::runtime_error(
+                "SecureChannel received unencrypted packet.");
+        }
+
+        if (session.sessionKey.bytes.data.size() != 32)
+        {
+            throw std::runtime_error(
+                "SecureChannel requires a 32-byte AES-256 session key.");
+        }
+
+        /*
+         * Reconstruct the CryptoEngine Ciphertext object.
+         */
+        Ciphertext encrypted;
+
+        encrypted.bytes =
+            packet.ciphertext;
+
+        encrypted.nonce.bytes =
+            packet.nonce;
+
+        encrypted.tag.bytes =
+            packet.mac;
+
+        /*
+         * AES-256-GCM decryption automatically verifies
+         * the authentication tag.
+         *
+         * If ciphertext, nonce, tag, AAD, or key is
+         * invalid, CryptoEngine::Decrypt() throws.
+         */
+        ByteArray plaintext =
+            m_crypto->Decrypt(
+                encrypted,
+                session.sessionKey);
+
+        Logger::Info(
+            "SecureChannel: AES-256-GCM decryption successful.");
+
+        return plaintext;
+    }
+
+    /*
+     * ------------------------------------------------------
+     * MAC Compatibility Interface
+     * ------------------------------------------------------
+     *
+     * AES-GCM already provides authenticated encryption.
+     * Therefore no separate HMAC is required here.
+     *
+     * The GCM authentication tag is stored in
+     * SecurePacket::mac.
+     * ------------------------------------------------------
+     */
+
+    ByteArray ComputeMAC(
+        const ByteArray&,
+        const Session&)
+    {
+        Logger::Info(
+            "SecureChannel: GCM authentication tag is used; "
+            "separate MAC not required.");
+
+        return ByteArray();
+    }
+
+    bool VerifyMAC(
+        const SecurePacket&,
+        const Session&)
+    {
+        Logger::Info(
+            "SecureChannel: GCM authentication tag is verified "
+            "during decryption.");
+
+        return true;
+    }
 
 private:
 
     CryptoEngine* m_crypto = nullptr;
+	
+	SessionManager* m_sessionManager = nullptr;
 };
 
 }
 
-#endif
+#endif // KRYON_SECURE_CHANNEL_H

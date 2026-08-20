@@ -66,6 +66,11 @@ public:
 	m_secureChannel.SetCryptoEngine(
     &m_crypto);
 
+	m_secureChannel.SetSessionManager(
+    &m_authentication
+        .GetAuthenticationManager()
+        .GetSessionManager());
+		
 	m_secureChannel.Initialize();
 
     Logger::Info("Security Engine initialized.");

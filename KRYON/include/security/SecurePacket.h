@@ -54,10 +54,22 @@ struct SecurePacket
      */
     ByteArray ciphertext;
 
-    /*
-     * Authentication tag / MAC.
-     */
-    ByteArray mac;
+	/*
+	 * AES-256-GCM nonce / IV.
+	 *
+	 * GCM uses a 12-byte nonce for each encryption
+	 * operation. The nonce is not secret and must be
+	 * transmitted with the ciphertext.
+	 */
+	ByteArray nonce;
+
+	/*
+	 * AES-256-GCM authentication tag.
+	 *
+	 * This is carried in the existing MAC field for
+	 * compatibility with the SecurePacket abstraction.
+	 */
+	ByteArray mac;
 
     /*
      * Indicates encryption status.

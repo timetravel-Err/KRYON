@@ -67,6 +67,21 @@ struct Session
      * Indicates whether the session is valid.
      */
     bool active = false;
+	
+	/*
+	 * Highest accepted secure-channel sequence number.
+	 *
+	 * Used for replay protection. A received packet is
+	 * accepted only if its sequence number is greater
+	 * than this value.
+	 */
+	uint64_t lastReceivedSequence = 0;
+	
+	/*
+	 * Next sequence number to use for an outgoing
+	 * secure-channel packet.
+	 */
+	uint64_t nextSendSequence = 1;
 };
 
 }

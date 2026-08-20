@@ -38,7 +38,7 @@
 #include "HashEngine.h"
 #include "KeyGenerator.h"
 #include "ECCEngine.h"
-
+#include "SymmetricCryptoEngine.h"
 namespace kryon
 {
 
@@ -53,7 +53,8 @@ public:
           m_random(config, context),
           m_hash(config, context),
           m_keyGenerator(config, context),
-          m_ecc(config, context)
+          m_ecc(config, context),
+		  m_symmetric(config, context)
     {
     }
 
@@ -69,6 +70,7 @@ public:
         m_hash.Initialize();
         m_keyGenerator.Initialize();
         m_ecc.Initialize();
+		m_symmetric.Initialize();
     }
 
     /* ------------------------------------------------------
@@ -125,6 +127,36 @@ public:
         return m_ecc.DeriveSharedSecret(privateKey, publicKey);
     }
 	
+	/* ------------------------------------------------------
+	 * Symmetric Encryption
+	 * ------------------------------------------------------*/
+
+	Ciphertext Encrypt(
+		const ByteArray& plaintext,
+		const SessionKey& key,
+		const ByteArray& aad = ByteArray())
+	{
+		return m_symmetric.Encrypt(
+			plaintext,
+			key,
+			aad);
+	}
+
+	/* ------------------------------------------------------
+	 * Symmetric Decryption
+	 * ------------------------------------------------------*/
+
+	ByteArray Decrypt(
+		const Ciphertext& ciphertext,
+		const SessionKey& key,
+		const ByteArray& aad = ByteArray())
+	{
+		return m_symmetric.Decrypt(
+			ciphertext,
+			key,
+			aad);
+	}
+	
 	SessionKey DeriveSessionKey(
     const SharedSecret& secret)
 {
@@ -137,7 +169,8 @@ public:
 
     void Finalize()
     {
-        m_ecc.Finalize();
+        m_symmetric.Finalize();
+		m_ecc.Finalize();
         m_keyGenerator.Finalize();
         m_hash.Finalize();
         m_random.Finalize();
@@ -158,6 +191,8 @@ private:
     KeyGenerator m_keyGenerator;
 
     ECCEngine m_ecc;
+	
+	SymmetricCryptoEngine m_symmetric;
 
 };
 
