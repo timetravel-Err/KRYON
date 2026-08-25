@@ -77,3 +77,105 @@ build_exec(
     EXECUTABLE_DIRECTORY_PATH
         ${scratch_directory}/
 )
+
+# ----------------------------------------------------------
+# Session Manager Test
+# ----------------------------------------------------------
+
+build_exec(
+    EXECNAME test-session-manager
+    EXECNAME_PREFIX scratch_kryon_
+
+    SOURCE_FILES
+        test-session-manager.cc
+
+    LIBRARIES_TO_LINK
+        ${ns3-libs}
+        ${ns3-contrib-libs}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+
+    EXECUTABLE_DIRECTORY_PATH
+        ${scratch_directory}/
+)
+# ----------------------------------------------------------
+# Session Reuse Test
+# ----------------------------------------------------------
+
+build_exec(
+    EXECNAME test-session-reuse
+    EXECNAME_PREFIX scratch_kryon_
+
+    SOURCE_FILES
+        test-session-reuse.cc
+
+    LIBRARIES_TO_LINK
+        ${ns3-libs}
+        ${ns3-contrib-libs}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+
+    EXECUTABLE_DIRECTORY_PATH
+        ${scratch_directory}/
+)
+# ----------------------------------------------------------
+# Session Expiry + Re-authentication Test
+# ----------------------------------------------------------
+
+build_exec(
+    EXECNAME test-session-expiry-reauth
+    EXECNAME_PREFIX scratch_kryon_
+
+    SOURCE_FILES
+        test-session-expiry-reauth.cc
+
+    LIBRARIES_TO_LINK
+        ${ns3-libs}
+        ${ns3-contrib-libs}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+
+    EXECUTABLE_DIRECTORY_PATH
+        ${scratch_directory}/
+)
+
+# ----------------------------------------------------------
+# Test Secure Channel 
+# ----------------------------------------------------------
+
+build_exec(
+    EXECNAME test-secure-channel
+    EXECNAME_PREFIX scratch_kryon_
+
+    SOURCE_FILES
+        test-secure-channel.cc
+
+    LIBRARIES_TO_LINK
+        ${ns3-libs}
+        ${ns3-contrib-libs}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+
+    EXECUTABLE_DIRECTORY_PATH
+        ${scratch_directory}/
+)
+# ----------------------------------------------------------
+# Test Secure Channel Replay Protection
+# ----------------------------------------------------------
+
+build_exec(
+    EXECNAME test-secure-channel-replay
+    EXECNAME_PREFIX scratch_kryon_
+
+    SOURCE_FILES
+        test-secure-channel-replay.cc
+
+    LIBRARIES_TO_LINK
+        ${ns3-libs}
+        ${ns3-contrib-libs}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+
+    EXECUTABLE_DIRECTORY_PATH
+        ${scratch_directory}/
+)

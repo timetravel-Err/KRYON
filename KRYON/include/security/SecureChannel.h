@@ -110,20 +110,39 @@ public:
             ns3::Simulator::Now().GetSeconds();
 
         /*
-         * Sequence number.
-         *
-         * A dedicated counter will be introduced later
-         * for full replay protection.
-         */
-        packet.sequenceNumber = 0;
+		 * Allocate the next authenticated sequence number.
+		 */
+		packet.sequenceNumber =
+			m_sessionManager->GetNextSendSequence(
+				session.sessionId,
+				packet.timestamp);
 
-        /*
-         * Encrypt the application payload.
-         */
-        Ciphertext encrypted =
-            m_crypto->Encrypt(
-                plaintext,
-                session.sessionKey);
+       /*
+		 * Authenticate the session identifier and
+		 * sequence number using AES-GCM AAD.
+		 *
+		 * These fields remain visible in the packet,
+		 * but any modification invalidates the GCM tag.
+		 */
+		ByteArray aad;
+
+		std::string aadString =
+			session.sessionId +
+			"|" +
+			std::to_string(packet.sequenceNumber);
+
+		aad.data.assign(
+			aadString.begin(),
+			aadString.end());
+
+		/*
+		 * Encrypt the application payload.
+		 */
+		Ciphertext encrypted =
+			m_crypto->Encrypt(
+				plaintext,
+				session.sessionKey,
+				aad);
 
         /*
          * Copy AES-GCM output into SecurePacket.
@@ -200,22 +219,60 @@ public:
             packet.mac;
 
         /*
-         * AES-256-GCM decryption automatically verifies
-         * the authentication tag.
-         *
-         * If ciphertext, nonce, tag, AAD, or key is
-         * invalid, CryptoEngine::Decrypt() throws.
-         */
-        ByteArray plaintext =
-            m_crypto->Decrypt(
-                encrypted,
-                session.sessionKey);
+		 * Reconstruct the same authenticated data used
+		 * during encryption.
+		 *
+		 * The sequence number is deliberately included
+		 * in the AAD so that it cannot be modified without
+		 * invalidating the GCM authentication tag.
+		 */
+		ByteArray aad;
 
-        Logger::Info(
-            "SecureChannel: AES-256-GCM decryption successful.");
+		std::string aadString =
+			packet.sessionId +
+			"|" +
+			std::to_string(packet.sequenceNumber);
 
-        return plaintext;
-    }
+		aad.data.assign(
+			aadString.begin(),
+			aadString.end());
+
+		/*
+		 * AES-256-GCM authentication/decryption.
+		 *
+		 * IMPORTANT:
+		 * Replay state is NOT updated until this
+		 * cryptographic authentication succeeds.
+		 */
+		ByteArray plaintext =
+			m_crypto->Decrypt(
+				encrypted,
+				session.sessionKey,
+				aad);
+
+		/*
+		 * ------------------------------------------------------
+		 * Replay protection
+		 * ------------------------------------------------------
+		 *
+		 * Only update replay state after successful
+		 * cryptographic authentication.
+		 */
+		if (!m_sessionManager->AcceptReceivedSequence(
+				packet.sessionId,
+				packet.sequenceNumber,
+				packet.timestamp))
+		{
+			throw std::runtime_error(
+				"SecureChannel replay protection rejected "
+				"duplicate or out-of-order packet.");
+		}
+
+				Logger::Info(
+					"SecureChannel: AES-256-GCM decryption successful.");
+
+				return plaintext;
+			}
 
     /*
      * ------------------------------------------------------

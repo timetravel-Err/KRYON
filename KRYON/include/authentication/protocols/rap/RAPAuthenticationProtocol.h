@@ -42,7 +42,7 @@
 #include "../../packets/AuthChallengePacket.h"
 #include "../../packets/AuthResponsePacket.h"
 #include "../../packets/AuthConfirmPacket.h"
-
+#include "../../SessionManager.h"
 namespace kryon
 {
 
@@ -55,13 +55,20 @@ public:
     ~RAPAuthenticationProtocol() override = default;
 	
 	void SetCryptoEngine(CryptoEngine* crypto)
-{
-    m_crypto = crypto;
+	{
+		m_crypto = crypto;
 
-    Logger::Info(
-        "RAP received CryptoEngine pointer " );
-}
+		Logger::Info(
+			"RAP received CryptoEngine pointer " );
+	}
 
+	void SetSessionManager(SessionManager* sessionManager)
+	{
+		m_sessionManager = sessionManager;
+
+		Logger::Info(
+			"RAP received SessionManager pointer.");
+	}
 void Initialize() override
 {
     Logger::Info(
@@ -97,6 +104,96 @@ AuthenticationResult Authenticate(
 	//double start = ns3::Simulator::Now().GetSeconds();
 	auto start =
     std::chrono::steady_clock::now();
+	
+	    /*
+     * ------------------------------------------------------
+     * Check for an existing valid session
+     * ------------------------------------------------------
+     */
+
+    if (m_sessionManager != nullptr)
+    {
+        double currentTime =
+            ns3::Simulator::Now().GetSeconds();
+
+        Session* existingSession =
+            m_sessionManager->FindSession(
+                request.sourceNodeId,
+                request.destinationNodeId,
+                currentTime);
+
+        if (existingSession != nullptr)
+        {
+            Logger::Info(
+                "[RAP] Existing authenticated session found.");
+
+            Logger::Info(
+                "[RAP] Reusing session : " +
+                existingSession->sessionId);
+
+            Logger::Info(
+                "[RAP] Session key size : " +
+                std::to_string(
+                    existingSession->sessionKey.bytes.data.size()) +
+                " bytes");
+
+            auto end =
+                std::chrono::steady_clock::now();
+
+            double authenticationTimeMs =
+                std::chrono::duration<double, std::milli>(
+                    end - start).count();
+
+            AuthenticationResult result;
+
+            result.requestId =
+                request.requestId;
+
+            result.protocolName =
+                "RAP";
+
+            result.method =
+                request.method;
+
+            result.status =
+                AuthenticationStatus::SUCCESS;
+
+            result.authenticated =
+                true;
+
+            result.sessionId =
+                existingSession->sessionId;
+
+            result.sessionKey =
+                existingSession->sessionKey;
+
+            result.sessionLifetime =
+                existingSession->expirationTime -
+                currentTime;
+
+            result.messagesExchanged =
+                0;
+
+            result.bytesExchanged =
+                0;
+
+            result.authenticationTimeMs =
+                authenticationTimeMs;
+
+            result.reason =
+                "Existing RAP session reused.";
+
+            return result;
+        }
+    }
+	
+	/*
+     * ------------------------------------------------------
+     * No valid session found.
+     *
+     * Continue with full RAP authentication.
+     * ------------------------------------------------------
+     */
 	if (m_crypto == nullptr)
 {
     AuthenticationResult result;
@@ -656,11 +753,57 @@ AuthenticationResult BuildResult(
 
 	result.authenticated = authenticated;
 	
-	if (authenticated)
+if (authenticated)
 {
-    result.sessionId = "TEMP";
-    result.sessionKey = m_droneSessionKey;
-    result.sessionLifetime = 600.0;
+    if (m_sessionManager == nullptr)
+    {
+        Logger::Info(
+            "[RAP] SessionManager unavailable.");
+
+        result.authenticated = false;
+        result.status =
+            AuthenticationStatus::FAILED;
+
+        result.reason =
+            "Authentication succeeded but SessionManager is unavailable.";
+
+        return result;
+    }
+
+    double currentTime =
+        ns3::Simulator::Now().GetSeconds();
+
+    double sessionLifetime =
+        600.0;
+
+    Session session =
+        m_sessionManager->CreateAuthenticatedSession(
+            request.sourceNodeId,
+            request.destinationNodeId,
+            m_droneSessionKey,
+            currentTime,
+            sessionLifetime);
+
+    result.sessionId =
+        session.sessionId;
+
+    result.sessionKey =
+        session.sessionKey;
+
+    result.sessionLifetime =
+        sessionLifetime;
+
+    Logger::Info(
+        "[RAP] Authenticated session created.");
+
+    Logger::Info(
+        "[RAP] Session ID : " +
+        session.sessionId);
+
+    Logger::Info(
+        "[RAP] Session lifetime : " +
+        std::to_string(sessionLifetime) +
+        " seconds");
 }
 
 	/*
@@ -696,7 +839,7 @@ return result;
 
 
     CryptoEngine* m_crypto = nullptr;
-
+	SessionManager* m_sessionManager = nullptr;
     KeyPair m_droneKeys;
     KeyPair m_vehicleKeys;
 
