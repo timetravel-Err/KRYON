@@ -127,11 +127,9 @@ public:
 		ByteArray aad;
 
 		std::string aadString =
-        session.sessionId +
-        "|" +
-        std::to_string(packet.sequenceNumber) +
-        "|" +
-        std::to_string(packet.timestamp);
+			session.sessionId +
+			"|" +
+			std::to_string(packet.sequenceNumber);
 
 		aad.data.assign(
 			aadString.begin(),
@@ -231,11 +229,9 @@ public:
 		ByteArray aad;
 
 		std::string aadString =
-        packet.sessionId +
-        "|" +
-        std::to_string(packet.sequenceNumber) +
-        "|" +
-        std::to_string(packet.timestamp);
+			packet.sessionId +
+			"|" +
+			std::to_string(packet.sequenceNumber);
 
 		aad.data.assign(
 			aadString.begin(),

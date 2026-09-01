@@ -488,6 +488,65 @@ main(int argc, char* argv[])
         return 1;
     }
 
+		/*
+		 * ------------------------------------------------------
+		 * TEST 9: TIMESTAMP TAMPERING
+		 * ------------------------------------------------------
+		 */
+
+		std::cout
+			<< "\n------------------------------------------"
+			<< std::endl;
+
+		std::cout
+			<< "TEST 9: TIMESTAMP TAMPERING"
+			<< std::endl;
+
+		std::cout
+			<< "------------------------------------------"
+			<< std::endl;
+
+		kryon::SecurePacket tamperedTimestamp =
+			packet3;
+
+		/*
+		 * Modify only the visible timestamp.
+		 *
+		 * Because timestamp is authenticated through AES-GCM
+		 * AAD, this modification must invalidate the tag.
+		 */
+		tamperedTimestamp.timestamp += 100.0;
+
+		try
+		{
+			kryon::ByteArray recovered =
+				secureChannel.Decrypt(
+					tamperedTimestamp,
+					session);
+
+			(void)recovered;
+
+			std::cout
+				<< "Tampered timestamp accepted: FAILED"
+				<< std::endl;
+
+			secureChannel.Finalize();
+			sessionManager.Finalize();
+			crypto.Finalize();
+
+			return 1;
+		}
+		catch (const std::exception& e)
+		{
+			std::cout
+				<< "Tampered timestamp rejected: SUCCESS"
+				<< std::endl;
+
+			std::cout
+				<< "Reason: "
+				<< e.what()
+				<< std::endl;
+		}
     /*
      * ------------------------------------------------------
      * Finalize

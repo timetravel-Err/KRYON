@@ -1,0 +1,149 @@
+#ifndef KRYON_CRYPTO_TYPES_H
+#define KRYON_CRYPTO_TYPES_H
+
+/**
+ * ----------------------------------------------------------
+ * KRYON Research Framework
+ * ----------------------------------------------------------
+ * File : CryptoTypes.h
+ *
+ * Description
+ * -----------
+ * Common cryptographic data structures shared across the
+ * KRYON framework.
+ *
+ * This file contains data types only.
+ * Cryptographic algorithms are implemented inside the
+ * corresponding crypto engines.
+ * ----------------------------------------------------------
+ */
+
+#include <vector>
+#include <cstdint>
+
+namespace kryon
+{
+
+/* ----------------------------------------------------------
+ * Generic Byte Container
+ * ----------------------------------------------------------*/
+
+struct ByteArray
+{
+    std::vector<uint8_t> data;
+};
+
+/* ----------------------------------------------------------
+ * Hash Value
+ * ----------------------------------------------------------*/
+
+struct HashValue
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * Public Key
+ * ----------------------------------------------------------*/
+
+struct PublicKey
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * Private Key
+ * ----------------------------------------------------------*/
+
+struct PrivateKey
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * Key Pair
+ * ----------------------------------------------------------*/
+
+struct KeyPair
+{
+    PublicKey publicKey;
+    PrivateKey privateKey;
+};
+
+/* ----------------------------------------------------------
+ * Shared Secret
+ * ----------------------------------------------------------*/
+
+struct SharedSecret
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * Session Key
+ * ----------------------------------------------------------*/
+
+struct SessionKey
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * Digital Signature
+ * ----------------------------------------------------------*/
+
+struct Signature
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * Generic Nonce
+ * ----------------------------------------------------------*/
+
+struct Nonce
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * AES-GCM Nonce
+ * ----------------------------------------------------------*/
+
+struct GCMNonce
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * AES-GCM Authentication Tag
+ * ----------------------------------------------------------*/
+
+struct AuthenticationTag
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * Generic Ciphertext
+ * ----------------------------------------------------------*/
+
+struct Ciphertext
+{
+    ByteArray bytes;
+};
+
+/* ----------------------------------------------------------
+ * AES-GCM Encryption Result
+ * ----------------------------------------------------------*/
+
+struct AEADCiphertext
+{
+    Ciphertext ciphertext;
+    GCMNonce nonce;
+    AuthenticationTag tag;
+};
+
+} // namespace kryon
+
+#endif

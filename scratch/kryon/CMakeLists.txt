@@ -179,3 +179,43 @@ build_exec(
     EXECUTABLE_DIRECTORY_PATH
         ${scratch_directory}/
 )
+# ----------------------------------------------------------
+# Test Secure Channel Out-of-Order Protection
+# ----------------------------------------------------------
+
+build_exec(
+    EXECNAME test-secure-channel-out-of-order
+    EXECNAME_PREFIX scratch_kryon_
+
+    SOURCE_FILES
+        test-secure-channel-out-of-order.cc
+
+    LIBRARIES_TO_LINK
+        ${ns3-libs}
+        ${ns3-contrib-libs}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+
+    EXECUTABLE_DIRECTORY_PATH
+        ${scratch_directory}/
+)
+# ----------------------------------------------------------
+# RAP + Secure Channel Integration Test
+# ----------------------------------------------------------
+
+build_exec(
+    EXECNAME test-rap-secure-channel-integration
+    EXECNAME_PREFIX scratch_kryon_
+
+    SOURCE_FILES
+        test-rap-secure-channel-integration.cc
+
+    LIBRARIES_TO_LINK
+        ${ns3-libs}
+        ${ns3-contrib-libs}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+
+    EXECUTABLE_DIRECTORY_PATH
+        ${scratch_directory}/
+)
