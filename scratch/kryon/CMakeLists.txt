@@ -219,3 +219,23 @@ build_exec(
     EXECUTABLE_DIRECTORY_PATH
         ${scratch_directory}/
 )
+# ----------------------------------------------------------
+# Authentication Codec Test
+# ----------------------------------------------------------
+
+build_exec(
+    EXECNAME test-auth-codec
+    EXECNAME_PREFIX scratch_kryon_
+
+    SOURCE_FILES
+        test-auth-codec.cc
+
+    LIBRARIES_TO_LINK
+        ${ns3-libs}
+        ${ns3-contrib-libs}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+
+    EXECUTABLE_DIRECTORY_PATH
+        ${scratch_directory}/
+)
