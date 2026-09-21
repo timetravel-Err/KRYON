@@ -31,6 +31,14 @@ struct AuthenticationJob
 			 */
 			uint32_t totalSteps = 2;
 	
+		/*
+	 * Measured authentication latency.
+	 *
+	 * This is the elapsed simulation time from the moment
+	 * authentication starts to the moment the completion
+	 * callback is received.
+	 */
+	double authenticationLatency = 0.0;
 	
 	uint32_t currentStep = 0;
 
