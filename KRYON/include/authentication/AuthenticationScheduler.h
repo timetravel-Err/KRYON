@@ -169,6 +169,12 @@ public:
 		 */
 		job.startTime =
 			ns3::Simulator::Now().GetSeconds();
+			
+		if (m_firstAuthenticationStartTime < 0.0)
+		{
+			m_firstAuthenticationStartTime =
+				job.startTime;
+		}	
         /*
          * Build first authentication packet.
          */
@@ -253,6 +259,8 @@ public:
 				ns3::Simulator::Now().GetSeconds() -
 				job.startTime;
 				
+			m_lastAuthenticationCompletionTime =
+			ns3::Simulator::Now().GetSeconds();	
 			/*
 			 * Store the measured latency for aggregate
 			 * authentication-latency statistics.
@@ -539,6 +547,120 @@ void PrintSchedulerStatistics()
 
     Logger::Info(
         "==========================================");
+		Logger::Info(
+    "==========================================");
+
+		Logger::Info(
+			"Authentication Communication Statistics");
+
+		Logger::Info(
+			"==========================================");
+
+		const uint64_t packetsSent =
+			m_transport.GetAuthPacketsSent();
+
+		const uint64_t packetsReceived =
+			m_transport.GetAuthPacketsReceived();
+
+		const uint64_t bytesSent =
+			m_transport.GetAuthBytesSent();
+
+		const uint64_t bytesReceived =
+			m_transport.GetAuthBytesReceived();
+
+		double averageBytesPerSentPacket = 0.0;
+
+		if (packetsSent > 0)
+		{
+			averageBytesPerSentPacket =
+				static_cast<double>(bytesSent) /
+				static_cast<double>(packetsSent);
+		}
+
+		Logger::Info(
+			"Authentication Packets Sent : " +
+			std::to_string(packetsSent));
+
+		Logger::Info(
+			"Authentication Packets Received : " +
+			std::to_string(packetsReceived));
+
+		Logger::Info(
+			"Authentication Bytes Sent : " +
+			std::to_string(bytesSent));
+
+		Logger::Info(
+			"Authentication Bytes Received : " +
+			std::to_string(bytesReceived));
+
+		Logger::Info(
+			"Average Bytes / Sent Packet : " +
+			std::to_string(
+				averageBytesPerSentPacket));
+
+		Logger::Info(
+			"==========================================");
+			
+			/*
+			 * --------------------------------------------------
+			 * Authentication Throughput Statistics
+			 * --------------------------------------------------
+			 *
+			 * Throughput is measured over the actual authentication
+			 * workload window:
+			 *
+			 * first authentication start
+			 * ->
+			 * last authentication completion
+			 *
+			 * Unit: successful/completed authentications per second.
+			 */
+
+			Logger::Info(
+				"==========================================");
+
+			Logger::Info(
+				"Authentication Throughput Statistics");
+
+			Logger::Info(
+				"==========================================");
+
+			double measurementDuration = 0.0;
+
+			double authenticationThroughput = 0.0;
+
+			if (m_firstAuthenticationStartTime >= 0.0 &&
+				m_lastAuthenticationCompletionTime >=
+					m_firstAuthenticationStartTime)
+			{
+				measurementDuration =
+					m_lastAuthenticationCompletionTime -
+					m_firstAuthenticationStartTime;
+
+				if (measurementDuration > 0.0)
+				{
+					authenticationThroughput =
+						static_cast<double>(m_jobsCompleted) /
+						measurementDuration;
+				}
+			}
+
+			Logger::Info(
+				"Completed Authentications : " +
+				std::to_string(m_jobsCompleted));
+
+			Logger::Info(
+				"Measurement Duration : " +
+				std::to_string(measurementDuration) +
+				" s");
+
+			Logger::Info(
+				"Authentication Throughput : " +
+				std::to_string(authenticationThroughput) +
+				" auth/s");
+
+			Logger::Info(
+				"==========================================");
 }
 
 private:
@@ -566,6 +688,17 @@ private:
     AuthenticationTransport& m_transport;
 
     AuthenticationPacketBuilder m_packetBuilder;
+	
+	/*
+	 * Authentication throughput measurement window.
+	 *
+	 * The measurement starts when the first authentication
+	 * transaction actually starts and ends when the last
+	 * authentication transaction completes.
+	 */
+	double m_firstAuthenticationStartTime = -1.0;
+
+	double m_lastAuthenticationCompletionTime = -1.0;
 };
 
 }
